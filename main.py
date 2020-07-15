@@ -1018,7 +1018,7 @@ async def habitats(ctx):
 			multipliers.append(f[i].split('=')[1].split(',')[1])
 		message = '```'
 		for x in range(len(places)):
-			message += '\n' + places[x].title() + ':\nPrice: ' + prices[x] + '\nMultiplier: ' + multipliers[x] + '\n'
+			message += '\n' + places[x].title().replace("'S","'s") + ':\nPrice: ' + prices[x] + '\nMultiplier: ' + multipliers[x] + '\n'
 		message += '```'
 		embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))),description='Your height: ' + bold(commas(await getScore(user))) + ' cm\n' + message)
 		await ctx.send(embed=embed)
