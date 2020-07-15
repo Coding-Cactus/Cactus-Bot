@@ -65,7 +65,7 @@ async def help(ctx, command=None):
 			embed.add_field(name='change-habitat', value='Move to a new habitat (increases multplier).')
 			embed.add_field(name='daily-reward', value='Collect your daily reward.')
 			embed.add_field(name='leaderboard', value='View leaderboard.')
-			embed.add_field(name='feedback', value='Send feedback on how to improve this bot.')
+			embed.add_field(name='feedback', value='Send feedback on how to improve this bot.\ne.g. new item for the shops.')
 			embed.add_field(name='bug', value='Report a bug (please be specific).')
 			embed.set_footer(text='Prefix is \'=\'')
 			await ctx.send(embed=embed)
