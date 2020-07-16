@@ -1,0 +1,16 @@
+[build-system]
+build-backend = "poetry.masonry.api"
+requires = ["poetry>=0.12"]
+
+[tool]
+[tool.poetry]
+authors = ["Your Name <you@example.com>"]
+description = ""
+name = "discord-bot"
+version = "0.1.0"
+[tool.poetry.dependencies]
+discord = "^1.0"
+flask = "^1.1"
+python = "^3.8"
+replitdb = "^0.0.7"
+[tool.poetry.dev-dependencies]
