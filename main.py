@@ -6,7 +6,7 @@ key=os.getenv('key')
 wkey=os.getenv('wkey')
 client = discord.Client()
 
-client = commands.Bot(command_prefix='=', help_command=None)
+client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=True)
 
 db = replitdb.AsyncClient()
 
@@ -690,9 +690,12 @@ async def servers(ctx):
 
 
 
-@client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg', 'PROF'])
-async def prof(ctx):
-	user = str(ctx.message.author.id)
+@client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
+async def prof(ctx, *, member: discord.Member=None):
+	if member == None:
+		user = str(ctx.message.author.id)
+	else:
+		user = str(member.id)
 	if user not in banned:
 		exist = await playerExist(user)
 		if exist:
@@ -720,7 +723,7 @@ async def prof(ctx):
 			await ctx.send(embed=embed)
 
 
-@client.command(aliases=['Grow', 'GROW'])
+@client.command()
 async def grow(ctx):
 	user = str(ctx.author.id)
 	if user not in banned:
@@ -753,7 +756,7 @@ async def grow(ctx):
 			embed = discord.Embed(color=0xff0000, description='You are still tired from the last time that you grew.\nPlease wait **' + str(cooldown - round(timeNow - userTime)) + '** second' + s + '.')
 			await ctx.send(embed=embed)
 
-@client.command(aliases=['SHOP','Shop'])
+@client.command()
 async def shop(ctx, mssg=None):
 	user = str(ctx.message.author.id)
 	if user not in banned:
@@ -792,7 +795,7 @@ async def shop(ctx, mssg=None):
 
 
 
-@client.command(aliases=['ishop','ISHOP','i-shop','I-SHOP','idle-shop','IDLE-SHOP'])
+@client.command(aliases=['ishop','i-shop','idle-shop'])
 async def idle_shop(ctx, mssg=None):
 	user = str(ctx.message.author.id)
 	if user not in banned:
@@ -830,7 +833,7 @@ async def idle_shop(ctx, mssg=None):
 			await db.add(idleMessages='\n' + '\n'.join(lst2[32:]))
 
 
-@client.command(aliases=['BUY', 'Buy'])
+@client.command()
 async def buy(ctx,*, mssg=None):
 	user = str(ctx.message.author.id)
 	if user not in banned:
@@ -867,7 +870,7 @@ async def buy(ctx,*, mssg=None):
 				await ctx.send(embed=embed)
 
 
-@client.command(aliases=['ibuy','IBUY','IDLE-BUY', 'idle-buy'])
+@client.command(aliases=['ibuy', 'idle-buy'])
 async def idle_buy(ctx,*, mssg=None):
 	user = str(ctx.message.author.id)
 	if user not in banned:
@@ -992,7 +995,7 @@ async def on_reaction_add(reaction, user):
 					await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
 
-@client.command(aliases=['habitat','HABITAT','HABITATS'])
+@client.command(aliases=['habitat'])
 async def habitats(ctx):
 	user = str(ctx.author.id)
 	if user not in banned:
@@ -1024,7 +1027,7 @@ async def habitats(ctx):
 		await ctx.send(embed=embed)
 
 
-@client.command(aliases=['change-habitat','CHANGE-HABITAT'])
+@client.command(aliases=['change-habitat'])
 async def change_habitat(ctx, mssg=None):
 	user = str(ctx.author.id)
 	if user not in banned:
@@ -1066,7 +1069,7 @@ async def change_habitat(ctx, mssg=None):
 
 
 					
-@client.command(aliases=['leaders', 'ranks', 'ranking', 'LEADERBOARD', 'LEADERS'])
+@client.command(aliases=['leaders', 'ranks', 'ranking'])
 async def leaderboard(ctx):
 	if str(ctx.author.id) not in banned:
 		scores = []
@@ -1094,7 +1097,7 @@ async def leaderboard(ctx):
 		await ctx.send(embed=embed)
 
 
-@client.command(aliases=['daily-reward','daily_reward', 'daily','DAILY-REWARD','DAILY'])
+@client.command(aliases=['daily-reward','daily_reward', 'daily'])
 async def dailyReward(ctx):
 	user = str(ctx.message.author.id)
 	if user not in banned:
@@ -1122,7 +1125,7 @@ async def dailyReward(ctx):
 
 
 
-@client.command(aliases=['bugs','report','bug_report','bug-report','bugReport'])
+@client.command(aliases=['bugs','report','bug_report','bug-report'])
 async def bug(ctx, *, mssg=None):
 	user = str(ctx.author.id)
 	user2 = str(ctx.author)
@@ -1206,8 +1209,8 @@ async def cooldown(ctx, mssg=None):
 
 
 
-@client.command(aliases=['additem'])
-async def addItem(ctx, mssg=None):
+@client.command()
+async def additem(ctx, mssg=None):
 	if ctx.message.author.id == 691576874261807134:
 		if mssg == None:
 			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
@@ -1227,8 +1230,8 @@ async def addItem(ctx, mssg=None):
 		embed = discord.Embed(color=0xff0000,description='You are not my creator!\nOnly they can use this command!')
 		await ctx.send(embed=embed)
 
-@client.command(aliases=['addidleitem'])
-async def addIdleItem(ctx, mssg=None):
+@client.command()
+async def addidleitem(ctx, mssg=None):
 	if ctx.message.author.id == 691576874261807134:
 		if mssg == None:
 			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
