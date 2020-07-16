@@ -680,12 +680,10 @@ async def invite(ctx):
 @client.command()
 async def servers(ctx):
 	if str(ctx.author.id) not in banned:
-		msg = ''
 		total = 0
 		for i in client.guilds:
-			msg += '\n' + str(i) + ' - ' + str((len(i.members))) + ' members'
 			total += len(i.members)
-		embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nThose are:```' + msg + '```\nTotal members - ' + bold(str(total)))
+		embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)))
 		await ctx.send(embed=embed)
 
 
@@ -1098,7 +1096,7 @@ async def leaderboard(ctx):
 
 
 @client.command(aliases=['daily-reward','daily_reward', 'daily'])
-async def dailyReward(ctx):
+async def dailyreward(ctx):
 	user = str(ctx.message.author.id)
 	if user not in banned:
 		if await playerExist(user):
@@ -1173,7 +1171,7 @@ async def feedback(ctx, *, mssg=None):
 
 @client.event
 async def on_message(message):
-	if 'cactus' in message.content.lower():
+	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
 	await client.process_commands(message)
 

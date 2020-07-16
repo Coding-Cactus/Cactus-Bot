@@ -1,11 +1,15 @@
-from flask import Flask
+import flask
 from threading import Thread
 
-app = Flask('')
+app = flask.Flask('')
 
 @app.route('/')
 def main():
-  return 'Cactus Bot Online! 🌵🌵🌵'
+	return flask.render_template('index.html')
+
+@app.route("/favicon.ico")
+def favicon():
+  return flask.send_file("favicon.ico")
 
 def run():
    app.run(host='0.0.0.0', port=8080)

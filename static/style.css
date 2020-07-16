@@ -1,0 +1,81 @@
+body {
+	margin: 0;
+	font-family: 'Baloo Da 2', cursive;
+	background-color: #242;
+	color: #ccc;
+	padding-top: 20px;
+}
+
+main {
+	width: 85vw;
+	margin: auto;
+	border: 5px solid #131;
+	border-radius: 20px;
+	padding: 15px;
+	margin-bottom: 20px;
+}
+
+h1 {
+	font-size: 50px;
+	margin: 0;
+	border-bottom: 2px solid #131;
+}
+
+h2{
+	margin: 0;
+	font-weight: normal;
+	border-bottom: 2px solid #131;
+}
+
+h3 {
+	font-size: 30px;
+	margin: 0;
+}
+
+h4 {
+	color: #3f3;
+	font-size: 20px;
+	margin: 0;
+}
+
+p {
+	margin: 0;
+}
+
+a{
+	color: #292;
+}
+
+a:hover {
+	color: #595;
+}
+
+#info, #commands, #contact{
+	margin-left: 30px;
+}
+
+.title {
+	color: #3aa;
+}
+
+.none {
+	font-weight: normal;
+	color: red;
+}
+
+.alias{
+	font-weight: normal;
+	color: yellow;
+}
+
+code {
+	color: #999;
+	padding: 2px;
+	border-radius: 5px;
+	background-color: rgba(50, 125, 50, 0.5);
+}
+
+.command-info {
+	margin-top: 0;
+	margin-left: 15px;
+}

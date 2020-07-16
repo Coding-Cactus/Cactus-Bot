@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="description" content="A fun discord bot where you live the life of a cactus and try to become the tallest!" >
+		<meta name="author" content="CodingCactus" >
+		<meta name="keywords" content="discord, discord-bot, cactus, cactus-bot" >
+    <meta name="viewport" content="width=device-width">
+    <title>Cactus Bot</title>
+		<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2&display=swap" rel="stylesheet">
+    <link href="static/style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+		<main>
+			<h1>Cactus Bot</h1>
+
+			<h2>
+				A fun discord bot where you live the life of a cactus and try to become the tallest!
+			</h2>
+
+			<h3>Info</h3>
+			<div id='info'>
+				<p>Preix: <code>=</code></p>
+				<p>Source Code: <a href='https://repl.it/@CodingCactus/Cactus-Bot-2'>https://repl.it/@CodingCactus/Cactus-Bot-2</a> | <a href='https://github.com/Coding-Cactus/Cactus-Bot'>https://github.com/Coding-Cactus/Cactus-Bot</a></p>
+				<p>Invite link: <a href='https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0'> https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0</a></p>
+			<div>
+
+			<h3>Commands</h3>
+			
+			<div id='commands'>
+
+				<h4>help</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<br>
+					<strong class='title'>description:</strong> Shows list of the commands and what they do.
+				</div>
+
+				<h4>info</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>invite, uptime, source, source-code, prefix</strong>
+					<br>
+					<strong class='title'>description:</strong> Gives info about the bot: the prefix, link to source, invite link, uptime
+				</div>
+
+				<h4>prof</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>profile, stats, height, size, cmpg, hpg</strong>
+					<br>
+					<strong class='title'>description:</strong> Shows you your stats (height, cm per growth, cm per min, multiplier, daily reward status). You can also do <code>=prof user</code> (replace 'user' with their id/nickname/mention/tag) to see stats for someone else.
+				</div>
+
+				<h4>grow</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<br>
+					<strong class='title'>description:</strong> Main way to gain cm. Has a cooldown of 10 seconds. Growth is depending on your cm per growth which can be increased by buying items from the shop.
+				</div>
+
+				<h4>shop</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<br>
+					<strong class='title'>description:</strong> View the items in the shop. Items in the shop increase your cm per growth. Press the arrows at the bottom to change page. You can also do <code>=shop num</code> (replace 'num' with a page number) to go directly to a certain page.
+				</div>
+
+				<h4>buy</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<br>
+					<strong class='title'>description:</strong> Buy an item from the shop. Use in the form: <code>=buy item</code> (replace 'item' with the item you want). 
+				</div>
+
+				<h4>idle-shop</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>ishop, i-shop, idle_shop</strong>
+					<br>
+					<strong class='title'>description:</strong> View the items in the idle-shop. Items in the idle-shop increase your cm per minnute. Press the arrows at the bottom to change page. You can also do <code>=idle-shop num</code> (replace 'num' with a page number) to go directly to a certain page.
+				</div>
+
+				<h4>idle-buy</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>ibuy, idle_buy</strong>
+					<br>
+					<strong class='title'>description:</strong> Buy an item from the idle-shop. Use in the form: <code>=idle-buy item</code> (replace 'item' with the item you want). 
+				</div>
+
+				<h4>habitats</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>habitat</strong>
+					<br>
+					<strong class='title'>description:</strong> View the habitats that you could move to. Habitats increase your multiplier.
+				</div>
+
+				<h4>change-habitats</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>change_habitat</strong>
+					<br>
+					<strong class='title'>description:</strong> Move to a new habitat. Habitats increase your multiplier.
+				</div>
+
+				<h4>daily-reward</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>daily_reward, daily, dailyreward</strong>
+					<br>
+					<strong class='title'>description:</strong> Collect your daily reward (250cm x multiplier)
+				</div>
+
+				<h4>leaderboard</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>leaders, ranks, ranking</strong>
+					<br>
+					<strong class='title'>description:</strong> View the top 10 tallest users and their height.
+				</div>
+
+				<h4>feedback</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>suggestion, suggestions</strong>
+					<br>
+					<strong class='title'>description:</strong> Suggest an improvement or somtheing to be added to the bot to make it better.
+				</div>
+
+				<h4>bug</h4>
+				<div class='command-info'>
+					<strong class='title'>aliases:</strong> <strong class='alias'>bugs, report, bug_report, bug-report</strong>
+					<br>
+					<strong class='title'>description:</strong> Report a bug that youhave found. PLease be as specific as you can.
+				</div>
+
+			</div>
+
+			<h3>Contact</h3>
+			<div id='contact'>
+				<p>Discord: CodingCactus#6777</p>
+				<p>repl.it: <a href='https://repl.it/@CodingCactus'>https://repl.it/@CodingCactus</a></p>
+				<p>GitHub: <a href='https://github.com/Coding-Cactus'>https://github.com/Coding-Cactus</a></p>
+		</main>
+  </body>
+</html>
