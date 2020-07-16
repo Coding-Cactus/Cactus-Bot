@@ -64,9 +64,14 @@ a:hover {
 	color: red;
 }
 
-.alias{
+.alias, .arg{
 	font-weight: normal;
 	color: yellow;
+}
+
+.op-arg {
+	font-weight: normal;
+	color: #c2c;
 }
 
 code {

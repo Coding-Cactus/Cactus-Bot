@@ -31,98 +31,126 @@
 
 				<h4>help</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<strong class='title'>aliases:</strong> <strong class='none'> None</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> Shows list of the commands and what they do.
 				</div>
 
 				<h4>info</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>invite, uptime, source, source-code, prefix</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> invite, uptime, source, source-code, prefix</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> Gives info about the bot: the prefix, link to source code, invite link, uptime
 				</div>
 
 				<h4>prof</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>profile, stats, height, size, cmpg, hpg</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> profile, stats, height, size, cmpg, hpg</strong>
 					<br>
-					<strong class='title'>description:</strong> Shows you your stats (height, cm per growth, cm per min, multiplier, daily reward status). You can also do <code>=prof user</code> (replace 'user' with their id/nickname/mention/tag) to see stats for someone else.
+					<strong class='title'>arguments:</strong> <strong class='op-arg'> optional(id/tag/mention/nickname)</strong>
+					<br>
+					<strong class='title'>description:</strong> Shows you your stats (height, cm per growth, cm per min, multiplier, daily reward status). You can also do <code>=prof user</code> (replace 'user' with their id/tag/mention/nickname) to see stats for someone else.
 				</div>
 
 				<h4>grow</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<strong class='title'>aliases:</strong> <strong class='none'> None</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> Main way to gain cm. Has a cooldown of 10 seconds. Growth is depending on your cm per growth which can be increased by buying items from the shop.
 				</div>
 
 				<h4>shop</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<strong class='title'>aliases:</strong> <strong class='none'> None</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='op-arg'> optinal(page number)</strong>
 					<br>
 					<strong class='title'>description:</strong> View the items in the shop. Items in the shop increase your cm per growth. Press the arrows at the bottom to change page. You can also do <code>=shop num</code> (replace 'num' with a page number) to go directly to a certain page.
 				</div>
 
 				<h4>buy</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='none'>None</strong>
+					<strong class='title'>aliases:</strong> <strong class='none'> None</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='arg'> item</strong>
 					<br>
 					<strong class='title'>description:</strong> Buy an item from the shop. Use in the form: <code>=buy item</code> (replace 'item' with the item you want). 
 				</div>
 
 				<h4>idle-shop</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>ishop, i-shop, idle_shop</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> ishop, i-shop, idle_shop</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='op-arg'> optional(page number)</strong>
 					<br>
 					<strong class='title'>description:</strong> View the items in the idle-shop. Items in the idle-shop increase your cm per minute. Press the arrows at the bottom to change page. You can also do <code>=idle-shop num</code> (replace 'num' with a page number) to go directly to a certain page.
 				</div>
 
 				<h4>idle-buy</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>ibuy, idle_buy</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> ibuy, idle_buy</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='arg'> item</strong>
 					<br>
 					<strong class='title'>description:</strong> Buy an item from the idle-shop. Use in the form: <code>=idle-buy item</code> (replace 'item' with the item you want). 
 				</div>
 
 				<h4>habitats</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>habitat</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> habitat</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> View the habitats that you could move to. Habitats increase your multiplier.
 				</div>
 
 				<h4>change-habitats</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>change_habitat</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> change_habitat</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='arg'> habitat</strong>
 					<br>
 					<strong class='title'>description:</strong> Move to a new habitat. Habitats increase your multiplier.
 				</div>
 
 				<h4>daily-reward</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>daily_reward, daily, dailyreward</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> daily_reward, daily, dailyreward</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> Collect your daily reward (250cm x multiplier)
 				</div>
 
 				<h4>leaderboard</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>leaders, ranks, ranking</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> leaders, ranks, ranking</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='none'> None</strong>
 					<br>
 					<strong class='title'>description:</strong> View the top 10 tallest users and their height.
 				</div>
 
 				<h4>feedback</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>suggestion, suggestions</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> suggestion, suggestions</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='arg'> message</strong>
 					<br>
 					<strong class='title'>description:</strong> Suggest an improvement or something to be added to the bot to make it better.
 				</div>
 
 				<h4>bug</h4>
 				<div class='command-info'>
-					<strong class='title'>aliases:</strong> <strong class='alias'>bugs, report, bug_report, bug-report</strong>
+					<strong class='title'>aliases:</strong> <strong class='alias'> bugs, report, bug_report, bug-report</strong>
+					<br>
+					<strong class='title'>arguments:</strong> <strong class='arg'> message</strong>
 					<br>
 					<strong class='title'>description:</strong> Report a bug that you have found. Please be as specific as you can.
 				</div>
