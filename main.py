@@ -30,20 +30,17 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-'''
 @client.event
 async def on_command_error(ctx, error):
-	if str(ctx.author.id) not in banned:
-		channel = client.get_channel(730420490296098846)
-		embed1 = discord.Embed(color=0xff0000,title='ERROR', description=str(error))
-		embed2 = discord.Embed(color=0xff0000,title='ERROR', description='```' + str(ctx.message.content) + '```' + str(error))
-		embed2.set_footer(text='Author:\n' + str(ctx.author) + '\n' + str(ctx.author.id) + '\n\nChannel:\n' + str(ctx.channel) + '\n' + str(ctx.channel.id) + '\n\nServer:\n' + str(ctx.guild) + '\n' + str(ctx.guild.id))
+	channel = client.get_channel(730420490296098846)
+	embed1 = discord.Embed(color=0xff0000,title='ERROR', description=str(error))
+	embed2 = discord.Embed(color=0xff0000,title='ERROR', description='```' + str(ctx.message.content) + '```' + str(error))
+	embed2.set_footer(text='Author:\n' + str(ctx.author) + '\n' + str(ctx.author.id) + '\n\nChannel:\n' + str(ctx.channel) + '\n' + str(ctx.channel.id) + '\n\nServer:\n' + str(ctx.guild) + '\n' + str(ctx.guild.id))
 
-		msg = await ctx.send(embed=embed1)
-		await channel.send(embed=embed2)
-		await asyncio.sleep(5)
-		await msg.delete()
-'''
+	msg = await ctx.send(embed=embed1)
+	await channel.send(embed=embed2)
+	await asyncio.sleep(5)
+	await msg.delete()
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
