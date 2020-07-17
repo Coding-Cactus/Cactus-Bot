@@ -8,7 +8,6 @@ client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=Tr
 
 db = replitdb.AsyncClient()
 
-banned = []
 #-------------------------------------------------------
 #							Status/On Ready
 #-------------------------------------------------------
@@ -31,6 +30,7 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
+'''
 @client.event
 async def on_command_error(ctx, error):
 	if str(ctx.author.id) not in banned:
@@ -43,30 +43,30 @@ async def on_command_error(ctx, error):
 		await channel.send(embed=embed2)
 		await asyncio.sleep(5)
 		await msg.delete()
+'''
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
 
 @client.command()
 async def help(ctx, command=None):
-	if str(ctx.author.id) not in banned:
-		if not command:
-			embed=discord.Embed(title="Commands", color=0x00ff00)
-			embed.add_field(name='info', value='Info about the bot, also it\'s invite link.', inline=False)
-			embed.add_field(name='prof', value='See your profile (stats).')
-			embed.add_field(name='grow', value='Grow and try to become a big cactus!')
-			embed.add_field(name='shop', value='Trade in some of your height for increases in height per growth.')
-			embed.add_field(name='buy', value='Buy an item from the shop\nIn the form: `=buy item`.')
-			embed.add_field(name='idle-shop', value='Trade in some of your height for increases in height per minute.')
-			embed.add_field(name='idle-buy', value='Buy an item from the idle shop\nIn the form: `=idle-buy item`.')
-			embed.add_field(name='habitats', value='Look at the habitats that you could move to (habitats increase multiplier).')
-			embed.add_field(name='change-habitat', value='Move to a new habitat (increases multplier).')
-			embed.add_field(name='daily-reward', value='Collect your daily reward.')
-			embed.add_field(name='leaderboard', value='View leaderboard.')
-			embed.add_field(name='feedback', value='Send feedback on how to improve this bot.\ne.g. new item for the shops.')
-			embed.add_field(name='bug', value='Report a bug (please be specific).')
-			embed.set_footer(text='Prefix is \'=\'')
-			await ctx.send(embed=embed)
+	if not command:
+		embed=discord.Embed(title="Commands", color=0x00ff00)
+		embed.add_field(name='info', value='Info about the bot, also it\'s invite link.', inline=False)
+		embed.add_field(name='prof', value='See your profile (stats).')
+		embed.add_field(name='grow', value='Grow and try to become a big cactus!')
+		embed.add_field(name='shop', value='Trade in some of your height for increases in height per growth.')
+		embed.add_field(name='buy', value='Buy an item from the shop\nIn the form: `=buy item`.')
+		embed.add_field(name='idle-shop', value='Trade in some of your height for increases in height per minute.')
+		embed.add_field(name='idle-buy', value='Buy an item from the idle shop\nIn the form: `=idle-buy item`.')
+		embed.add_field(name='habitats', value='Look at the habitats that you could move to (habitats increase multiplier).')
+		embed.add_field(name='change-habitat', value='Move to a new habitat (increases multplier).')
+		embed.add_field(name='daily-reward', value='Collect your daily reward.')
+		embed.add_field(name='leaderboard', value='View leaderboard.')
+		embed.add_field(name='feedback', value='Send feedback on how to improve this bot.\ne.g. new item for the shops.')
+		embed.add_field(name='bug', value='Report a bug (please be specific).')
+		embed.set_footer(text='Prefix is \'=\'')
+		await ctx.send(embed=embed)
 		
 #-------------------------------------------------------
 #						Functions
@@ -639,6 +639,22 @@ async def resetHabitat(user):
 	await db.add(habitatsBought='\n' + '\n'.join(lst))
 
 
+async def db_ban(user):
+	lst = str(await db.view('banned')).split('\n')
+	lst.append(user)
+	await db.add(banned='\n'.join(lst))
+
+async def get_banned():
+	return str(await db.view('banned')).split('\n')
+
+async def db_unban(user):
+	lst = str(await db.view('banned')).split('\n')
+	lst2 = []
+	for i in lst:
+		if i != user:
+			lst2.append(i)
+	await db.add(banned='\n'.join(lst2))
+
 async def perSec():
 	stuff = str(await db.view('idle')).split('\n')
 	change = []
@@ -665,24 +681,22 @@ def set_interval(func, sec):
 #-------------------------------------------------------
 @client.command(aliases=['info','uptime','source','source-code','prefix'])
 async def invite(ctx):
-	if str(ctx.author.id) not in banned:
-		now = time.time()
-		diff = now - uptime
-		hrs = str(round(diff // 3600))
-		mins = str(round((diff - int(hrs) * 3600) // 60))
-		secs = str(round(diff - int(hrs) *3600 - int(mins) * 60))
-		timestr = bold(hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
-		embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://repl.it/@CodingCactus/Cactus-Bot-2\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
-		await ctx.send(embed=embed)
+	now = time.time()
+	diff = now - uptime
+	hrs = str(round(diff // 3600))
+	mins = str(round((diff - int(hrs) * 3600) // 60))
+	secs = str(round(diff - int(hrs) *3600 - int(mins) * 60))
+	timestr = bold(hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
+	embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://repl.it/@CodingCactus/Cactus-Bot-2\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
+	await ctx.send(embed=embed)
 
 @client.command()
 async def servers(ctx):
-	if str(ctx.author.id) not in banned:
-		total = 0
-		for i in client.guilds:
-			total += len(i.members)
-		embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)))
-		await ctx.send(embed=embed)
+	total = 0
+	for i in client.guilds:
+		total += len(i.members)
+	embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)))
+	await ctx.send(embed=embed)
 
 
 
@@ -692,215 +706,209 @@ async def prof(ctx, *, member: discord.Member=None):
 		user = str(ctx.message.author.id)
 	else:
 		user = str(member.id)
-	if user not in banned:
-		exist = await playerExist(user)
-		if exist:
-			growth = await getGrowth(user)
-			score = await getScore(user)
-			idle = await getIdle(user)
-			dailyTime = await getDailyTime(user)
-			multiplier = await getMultplier(user)
-			timeNow = time.time()
-			difference = timeNow - dailyTime
-			difference2 = 3600*22 - difference
-			if difference >= 3600 * 22:
-				msg = 'Ready!'
-			else:
-				hrs = str(round(difference2 // 3600))
-				mins = str(round((difference2 - int(hrs) * 3600) // 60))
-				secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
-				msg='Ready in: ' + bold(hrs) + 'hrs ' + bold(mins) + 'mins ' + bold(secs) + 'secs'
-
-
-			embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))) + '\'s Profile', description='Height (cm): ' + bold(commas(score)) + '\ncm per growth: ' + bold(commas(growth)) + '\ncm per minute: ' + bold(commas(idle)) + '\nMultiplier: ' + bold(multiplier + 'x') + '\n\nDaily Reward Status:\n' + msg)
-			await ctx.send(embed=embed)
+	exist = await playerExist(user)
+	if exist:
+		growth = await getGrowth(user)
+		score = await getScore(user)
+		idle = await getIdle(user)
+		dailyTime = await getDailyTime(user)
+		multiplier = await getMultplier(user)
+		timeNow = time.time()
+		difference = timeNow - dailyTime
+		difference2 = 3600*22 - difference
+		if difference >= 3600 * 22:
+			msg = 'Ready!'
 		else:
-			embed = discord.Embed(color=0xff0000, description='You haven\'t played yet!')
-			await ctx.send(embed=embed)
+			hrs = str(round(difference2 // 3600))
+			mins = str(round((difference2 - int(hrs) * 3600) // 60))
+			secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
+			msg='Ready in: ' + bold(hrs) + 'hrs ' + bold(mins) + 'mins ' + bold(secs) + 'secs'
+
+
+		embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))) + '\'s Profile', description='Height (cm): ' + bold(commas(score)) + '\ncm per growth: ' + bold(commas(growth)) + '\ncm per minute: ' + bold(commas(idle)) + '\nMultiplier: ' + bold(multiplier + 'x') + '\n\nDaily Reward Status:\n' + msg)
+		await ctx.send(embed=embed)
+	else:
+		embed = discord.Embed(color=0xff0000, description='You haven\'t played yet!')
+		await ctx.send(embed=embed)
 
 
 @client.command()
 async def grow(ctx):
 	user = str(ctx.author.id)
-	if user not in banned:
-		cooldown= int(await db.view('cooldown'))
-		allow = False
-		timeNow = time.time()
-		if not await playerExist(user):
-			await addUser(user)
-			allow = True	
-		userTime = await getTime(user)
-		if round(timeNow - userTime) >= cooldown:
-			allow = True
+	cooldown= int(await db.view('cooldown'))
+	allow = False
+	timeNow = time.time()
+	if not await playerExist(user):
+		await addUser(user)
+		allow = True	
+	userTime = await getTime(user)
+	if round(timeNow - userTime) >= cooldown:
+		allow = True
 
-		if allow:
-		
-			growth = int(await getGrowth(user))
-			score = int(await getScore(user))
-			multiplier = int(await getMultplier(user))
-			newScore = score + (growth * multiplier)
+	if allow:
+	
+		growth = int(await getGrowth(user))
+		score = int(await getScore(user))
+		multiplier = int(await getMultplier(user))
+		newScore = score + (growth * multiplier)
 
-			embed = discord.Embed(color=0x00ff00, description='You grew ' + bold(commas(str(growth * multiplier))) + ' cm!\nYou are now ' + bold(commas(str(newScore))) + ' cm tall!')
-			await ctx.send(embed=embed)		
-			await updateScore(user, newScore)
-			await updateTime(user)
+		embed = discord.Embed(color=0x00ff00, description='You grew ' + bold(commas(str(growth * multiplier))) + ' cm!\nYou are now ' + bold(commas(str(newScore))) + ' cm tall!')
+		await ctx.send(embed=embed)		
+		await updateScore(user, newScore)
+		await updateTime(user)
+	else:
+		if cooldown - round(timeNow - userTime) == 1:
+			s = ''
 		else:
-			if cooldown - round(timeNow - userTime) == 1:
-				s = ''
-			else:
-				s = 's'
-			embed = discord.Embed(color=0xff0000, description='You are still tired from the last time that you grew.\nPlease wait **' + str(cooldown - round(timeNow - userTime)) + '** second' + s + '.')
-			await ctx.send(embed=embed)
+			s = 's'
+		embed = discord.Embed(color=0xff0000, description='You are still tired from the last time that you grew.\nPlease wait **' + str(cooldown - round(timeNow - userTime)) + '** second' + s + '.')
+		await ctx.send(embed=embed)
 
 @client.command()
 async def shop(ctx, mssg=None):
 	user = str(ctx.message.author.id)
-	if user not in banned:
-		if not await playerExist(user):
-			await addUser(user)
+	if not await playerExist(user):
+		await addUser(user)
 
-		if mssg == None:
-			page = '1'
-		else:
-			page = mssg
+	if mssg == None:
+		page = '1'
+	else:
+		page = mssg
 
-		items = await pageItems(page, user)
-		description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
-		description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
-		
-		for i in items:
-			description += i
-		description += '```'
+	items = await pageItems(page, user)
+	description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
+	description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
+	
+	for i in items:
+		description += i
+	description += '```'
 
-		embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
-		embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-		msg = await ctx.send(embed=embed)
+	embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
+	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
+	msg = await ctx.send(embed=embed)
 
-		await msg.add_reaction('⬅️')
-		await msg.add_reaction('➡️')
+	await msg.add_reaction('⬅️')
+	await msg.add_reaction('➡️')
 
-		await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
+	await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
 
-		lst = str(await db.view('messages')).split('\n')
-		lst2 = []
-		if len(lst) >= 75:
-			for l in lst:
-				if l != '':
-					lst2.append(l)
-			await db.add(messages='\n' + '\n'.join(lst2[32:]))
+	lst = str(await db.view('messages')).split('\n')
+	lst2 = []
+	if len(lst) >= 75:
+		for l in lst:
+			if l != '':
+				lst2.append(l)
+		await db.add(messages='\n' + '\n'.join(lst2[32:]))
 
 
 
 @client.command(aliases=['ishop','i-shop','idle-shop'])
 async def idle_shop(ctx, mssg=None):
 	user = str(ctx.message.author.id)
-	if user not in banned:
-		if not await playerExist(user):
-			await addUser(user)
+	if not await playerExist(user):
+		await addUser(user)
 
-		if mssg == None:
-			page = '1'
-		else:
-			page = mssg
+	if mssg == None:
+		page = '1'
+	else:
+		page = mssg
 
-		items = await idlePageItems(page, user)
-		description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
-		description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'
-		
-		for i in items:
-			description += i
-		description += '```'
+	items = await idlePageItems(page, user)
+	description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
+	description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'
+	
+	for i in items:
+		description += i
+	description += '```'
 
-		embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
-		embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-		msg = await ctx.send(embed=embed)
+	embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
+	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
+	msg = await ctx.send(embed=embed)
 
-		await msg.add_reaction('⬅️')
-		await msg.add_reaction('➡️')
+	await msg.add_reaction('⬅️')
+	await msg.add_reaction('➡️')
 
-		await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
+	await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
 
-		lst = str(await db.view('idleMessages')).split('\n')
-		lst2 = []
-		if len(lst) >= 75:
-			for l in lst:
-				if l != '':
-					lst2.append(l)
-			await db.add(idleMessages='\n' + '\n'.join(lst2[32:]))
+	lst = str(await db.view('idleMessages')).split('\n')
+	lst2 = []
+	if len(lst) >= 75:
+		for l in lst:
+			if l != '':
+				lst2.append(l)
+		await db.add(idleMessages='\n' + '\n'.join(lst2[32:]))
 
 
 @client.command()
 async def buy(ctx,*, mssg=None):
 	user = str(ctx.message.author.id)
-	if user not in banned:
-		if not await playerExist(user):
-			await addUser(user)
+	if not await playerExist(user):
+		await addUser(user)
 
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000, description='Please enter in the form `=buy item`')
-			await ctx.send(embed=embed)
-		else:
-			item = mssg.lower()
-			
+	if mssg == None:
+		embed = discord.Embed(color=0xff0000, description='Please enter in the form `=buy item`')
+		await ctx.send(embed=embed)
+	else:
+		item = mssg.lower()
+		
 
-			if await realItem(item):
-				score = await getScore(user)
-				hpg = await getGrowth(user)
-				price = await getPrice(item, user)
+		if await realItem(item):
+			score = await getScore(user)
+			hpg = await getGrowth(user)
+			price = await getPrice(item, user)
 
-				if enoughMoney(int(score), price):
-					multiplier = int(await getMultplier(user))
-					await updateHPG(user, int(hpg)+await getHPG(item))
+			if enoughMoney(int(score), price):
+				multiplier = int(await getMultplier(user))
+				await updateHPG(user, int(hpg)+await getHPG(item))
 
-					embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getGrowth(user)) * multiplier))) + ' cm per growth!')
-					await ctx.send(embed=embed)
-
-					await updateBought(user, item)
-					await updateScore(user, int(score)-price)
-				else:
-					embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
-					await ctx.send(embed=embed)
-				
-			else:
-				embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
+				embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getGrowth(user)) * multiplier))) + ' cm per growth!')
 				await ctx.send(embed=embed)
+
+				await updateBought(user, item)
+				await updateScore(user, int(score)-price)
+			else:
+				embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
+				await ctx.send(embed=embed)
+			
+		else:
+			embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
+			await ctx.send(embed=embed)
 
 
 @client.command(aliases=['ibuy', 'idle-buy'])
 async def idle_buy(ctx,*, mssg=None):
 	user = str(ctx.message.author.id)
-	if user not in banned:
-		if not await playerExist(user):
-			await addUser(user)
+	if not await playerExist(user):
+		await addUser(user)
 
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000, description='Please enter in the form `=idle-buy item`')
-			await ctx.send(embed=embed)
-		else:
-			item = mssg.lower()
-			
+	if mssg == None:
+		embed = discord.Embed(color=0xff0000, description='Please enter in the form `=idle-buy item`')
+		await ctx.send(embed=embed)
+	else:
+		item = mssg.lower()
+		
 
-			if await idleRealItem(item):
-				score = await getScore(user)
-				idle = await getIdle(user)
-				price = await idleGetPrice(item, user)
+		if await idleRealItem(item):
+			score = await getScore(user)
+			idle = await getIdle(user)
+			price = await idleGetPrice(item, user)
 
-				if enoughMoney(int(score), price):
-					multiplier = int(await getMultplier(user))				
-					await updateIdle(user, int(idle) + await getIdleItem(item))
+			if enoughMoney(int(score), price):
+				multiplier = int(await getMultplier(user))				
+				await updateIdle(user, int(idle) + await getIdleItem(item))
 
-					embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getIdle(user)) * multiplier))) + ' cm per minute!')
-					await ctx.send(embed=embed)
-					await idleUpdateBought(user, item)
-					await updateScore(user, int(score)-price)
-				else:
-					embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
-					await ctx.send(embed=embed)
-				
-			else:
-				embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
+				embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getIdle(user)) * multiplier))) + ' cm per minute!')
 				await ctx.send(embed=embed)
-	
+				await idleUpdateBought(user, item)
+				await updateScore(user, int(score)-price)
+			else:
+				embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
+				await ctx.send(embed=embed)
+			
+		else:
+			embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
+			await ctx.send(embed=embed)
+
 
 @client.event
 async def on_reaction_add(reaction, user):
@@ -994,190 +1002,182 @@ async def on_reaction_add(reaction, user):
 @client.command(aliases=['habitat'])
 async def habitats(ctx):
 	user = str(ctx.author.id)
-	if user not in banned:
-		if not await playerExist(user):
-			addUser(user)
+	if not await playerExist(user):
+		addUser(user)
 
-		f = str(await db.view('habitats')).split('\n')
-		f2 = str(await db.view('habitatsBought')).split('\n')
-		places = []
-		prices = []
-		multipliers =[]
-		for x in f2:
-			if x.split('=')[0] == user:
-				bought = x.split('=')[1].split(',')
-		for i in range(len(f)):
-			if bought[i] == '1':
-					prices.append('Current Location')
-			elif bought[i] == '2':			
-					prices.append('Cannot go back here')
-			else:
-				prices.append(commas(f[i].split('=')[1].split(',')[0]) + ' cm')
-			places.append(f[i].split('=')[0])
-			multipliers.append(f[i].split('=')[1].split(',')[1])
-		message = '```'
-		for x in range(len(places)):
-			message += '\n' + places[x].title().replace("'S","'s") + ':\nPrice: ' + prices[x] + '\nMultiplier: ' + multipliers[x] + '\n'
-		message += '```'
-		embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))),description='Your height: ' + bold(commas(await getScore(user))) + ' cm\n' + message)
-		await ctx.send(embed=embed)
+	f = str(await db.view('habitats')).split('\n')
+	f2 = str(await db.view('habitatsBought')).split('\n')
+	places = []
+	prices = []
+	multipliers =[]
+	for x in f2:
+		if x.split('=')[0] == user:
+			bought = x.split('=')[1].split(',')
+	for i in range(len(f)):
+		if bought[i] == '1':
+				prices.append('Current Location')
+		elif bought[i] == '2':			
+				prices.append('Cannot go back here')
+		else:
+			prices.append(commas(f[i].split('=')[1].split(',')[0]) + ' cm')
+		places.append(f[i].split('=')[0])
+		multipliers.append(f[i].split('=')[1].split(',')[1])
+	message = '```'
+	for x in range(len(places)):
+		message += '\n' + places[x].title().replace("'S","'s") + ':\nPrice: ' + prices[x] + '\nMultiplier: ' + multipliers[x] + '\n'
+	message += '```'
+	embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))),description='Your height: ' + bold(commas(await getScore(user))) + ' cm\n' + message)
+	await ctx.send(embed=embed)
 
 
 @client.command(aliases=['change-habitat'])
 async def change_habitat(ctx, mssg=None):
 	user = str(ctx.author.id)
-	if user not in banned:
-		if mssg != None:
-			if not await playerExist(user):
-				await addUser(user)
+	if mssg != None:
+		if not await playerExist(user):
+			await addUser(user)
 
-			choice = ctx.message.content.lower().replace('=change-habitat ','')
-			habitats = await getHabitats()
-			if choice in habitats:
-				bought = await getHabitatsBought(user)
-				if bought[habitats.index(choice)] != '1':
-					if bought[habitats.index(choice)] != '2':
-						score = await getScore(user)
-						price = await getHabitatPrice(choice)
-						if enoughMoney(score, price):
-							multiplier = await getHabitatMultiplier(choice)
-							embed = discord.Embed(color=0x00ff00,description='Congratulations! You now live in a ' + choice.title() + '!\nYour multiplier is now ' + bold(multiplier))
-							await ctx.send(embed=embed)
-							await updateScore(user, str(int(score) - int(price)))
-							await updateHabitatBought(user, choice)
-						else:
-							embed = discord.Embed(color=0xff0000,description='You aren\'t tall enough for that!')
-							await ctx.send(embed=embed)
+		choice = ctx.message.content.lower().replace('=change-habitat ','')
+		habitats = await getHabitats()
+		if choice in habitats:
+			bought = await getHabitatsBought(user)
+			if bought[habitats.index(choice)] != '1':
+				if bought[habitats.index(choice)] != '2':
+					score = await getScore(user)
+					price = await getHabitatPrice(choice)
+					if enoughMoney(score, price):
+						multiplier = await getHabitatMultiplier(choice)
+						embed = discord.Embed(color=0x00ff00,description='Congratulations! You now live in a ' + choice.title() + '!\nYour multiplier is now ' + bold(multiplier))
+						await ctx.send(embed=embed)
+						await updateScore(user, str(int(score) - int(price)))
+						await updateHabitatBought(user, choice)
 					else:
-						embed = discord.Embed(color=0xff0000,description='You have already lived there, you can\'t go back!')
+						embed = discord.Embed(color=0xff0000,description='You aren\'t tall enough for that!')
 						await ctx.send(embed=embed)
 				else:
-					embed = discord.Embed(color=0xff0000,description='You are already there!')
+					embed = discord.Embed(color=0xff0000,description='You have already lived there, you can\'t go back!')
 					await ctx.send(embed=embed)
-						
 			else:
-				embed = discord.Embed(color=0xff0000,description='Unkown habitat \'' + choice +'\'')
+				embed = discord.Embed(color=0xff0000,description='You are already there!')
 				await ctx.send(embed=embed)
-
+					
 		else:
-			embed = discord.Embed(color=0xff0000,description='You didn\'t enter anything.')
+			embed = discord.Embed(color=0xff0000,description='Unkown habitat \'' + choice +'\'')
 			await ctx.send(embed=embed)
+
+	else:
+		embed = discord.Embed(color=0xff0000,description='You didn\'t enter anything.')
+		await ctx.send(embed=embed)
 
 
 					
 @client.command(aliases=['leaders', 'ranks', 'ranking'])
 async def leaderboard(ctx):
-	if str(ctx.author.id) not in banned:
-		scores = []
-		players = []
-		orderedScores = []
-		f = str(await db.view('score')).split('\n')
-		for i in f:
-			if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
-				scores.append(int(i.replace('\n','').split('=')[1]))
-				orderedScores.append(int(i.replace('\n','').split('=')[1]))
-				players.append(int(i.replace('\n','').split('=')[0]))
-		orderedScores.sort(reverse=True)
-		orderedPlayers = []
-		for x in orderedScores:
-			orderedPlayers.append(players[scores.index(x)])
-			scores[scores.index(x)] = ''
+	scores = []
+	players = []
+	orderedScores = []
+	f = str(await db.view('score')).split('\n')
+	for i in f:
+		if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
+			scores.append(int(i.replace('\n','').split('=')[1]))
+			orderedScores.append(int(i.replace('\n','').split('=')[1]))
+			players.append(int(i.replace('\n','').split('=')[0]))
+	orderedScores.sort(reverse=True)
+	orderedPlayers = []
+	for x in orderedScores:
+		orderedPlayers.append(players[scores.index(x)])
+		scores[scores.index(x)] = ''
 
-		description = '```'
-		loops = 10
-		if len(scores) < loops:
-			loops = len(scores)
-		for a in range(loops):
-			description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
-		embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
-		await ctx.send(embed=embed)
+	description = '```'
+	loops = 10
+	if len(scores) < loops:
+		loops = len(scores)
+	for a in range(loops):
+		description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
+	embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
+	await ctx.send(embed=embed)
 
 
 @client.command(aliases=['daily-reward','daily_reward', 'daily'])
 async def dailyreward(ctx):
 	user = str(ctx.message.author.id)
-	if user not in banned:
-		if await playerExist(user):
-			pass
-		else:
-			await addUser(user)
+	if await playerExist(user):
+		pass
+	else:
+		await addUser(user)
 
-		dailyTime = await getDailyTime(user)
-		timeNow = time.time()
-		difference = timeNow - dailyTime
-		difference2 = 3600*22 - difference
-		if difference >= 3600 * 22:
-			multiplier = int(await getMultplier(user))
-			embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(250 * multiplier) + ' cm!')
-			await ctx.send(embed=embed)
-			await updateScore(user, str(int(await getScore(user)) + 250 * multiplier))
-			await updateDailyTime(user)
-		else:
-			hrs = str(round(difference2 // 3600))
-			mins = str(round((difference2 - int(hrs) * 3600) // 60))
-			secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
-			embed = discord.Embed(color=0xff0000,description='Your daily gift isn\'t ready yet!\nIt will be ready in ' + hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
-			await ctx.send(embed=embed)
+	dailyTime = await getDailyTime(user)
+	timeNow = time.time()
+	difference = timeNow - dailyTime
+	difference2 = 3600*22 - difference
+	if difference >= 3600 * 22:
+		multiplier = int(await getMultplier(user))
+		embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(250 * multiplier) + ' cm!')
+		await ctx.send(embed=embed)
+		await updateScore(user, str(int(await getScore(user)) + 250 * multiplier))
+		await updateDailyTime(user)
+	else:
+		hrs = str(round(difference2 // 3600))
+		mins = str(round((difference2 - int(hrs) * 3600) // 60))
+		secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
+		embed = discord.Embed(color=0xff0000,description='Your daily gift isn\'t ready yet!\nIt will be ready in ' + hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
+		await ctx.send(embed=embed)
 
 
 
 @client.command(aliases=['bugs','report','bug_report','bug-report'])
 async def bug(ctx, *, mssg=None):
-	user = str(ctx.author.id)
 	user2 = str(ctx.author)
-	if user not in banned:
-		if mssg==None:
-			embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
-			await ctx.send(embed=embed)
+	if mssg==None:
+		embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
+		await ctx.send(embed=embed)
+	else:
+		if len(mssg) < 1900:
+			channel = client.get_channel(727123726990049291)
+			location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
+			footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
+			embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
+			embed.set_footer(text=footer)
+			await channel.send(embed=embed)
+			embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for reporting!')
+			await ctx.send(embed=embed2)
 		else:
-			if len(mssg) < 1900:
-				channel = client.get_channel(727123726990049291)
-				location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
-				footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
-				embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
-				embed.set_footer(text=footer)
-				await channel.send(embed=embed)
-				embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for reporting!')
-				await ctx.send(embed=embed2)
-			else:
-				embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
-				await ctx.send(embed=embed)
+			embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
+			await ctx.send(embed=embed)
 
 
 @client.command(aliases=['suggestion','suggestions'])
 async def feedback(ctx, *, mssg=None):
-	user = str(ctx.author.id)
 	user2 = str(ctx.author)
-	if user not in banned:
-		if mssg==None:
-			embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
-			await ctx.send(embed=embed)
+	if mssg==None:
+		embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
+		await ctx.send(embed=embed)
+	else:
+		if len(mssg) < 1900:
+			channel = client.get_channel(727865599467978849)
+			location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
+			footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
+			embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
+			embed.set_footer(text=footer)
+			await channel.send(embed=embed)
+			embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for your feedback!')
+			await ctx.send(embed=embed2)
 		else:
-			if len(mssg) < 1900:
-				channel = client.get_channel(727865599467978849)
-				location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
-				footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
-				embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
-				embed.set_footer(text=footer)
-				await channel.send(embed=embed)
-				embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for your feedback!')
-				await ctx.send(embed=embed2)
-			else:
-				embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
-				await ctx.send(embed=embed)
+			embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
+			await ctx.send(embed=embed)
 
 
 @client.event
 async def on_message(message):
 	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
-	await client.process_commands(message)
+	if str(message.author.id) not in await get_banned():
+		await client.process_commands(message)
 
 
 @client.command()
 async def hug(ctx):
-	if str(ctx.author.id) not in banned:
-		await ctx.send(random.choice(['https://tenor.com/view/red-panda-tackle-surprised-hug-cute-gif-12661024','https://tenor.com/view/cat-love-huge-hug-big-gif-11990658']))
+	await ctx.send(random.choice(['https://tenor.com/view/red-panda-tackle-surprised-hug-cute-gif-12661024','https://tenor.com/view/cat-love-huge-hug-big-gif-11990658']))
 
 
 #-------------------------------------------------------
@@ -1291,6 +1291,46 @@ async def reply(ctx, *, mssg):
 		embed = discord.Embed(color=0x00ff00,description='Sent successfully\nYou said:```<@' + mentionID + '\n> ' + reply + '```')
 		await ctx.send(embed=embed)
 
+@client.command()
+async def ban(ctx, mssg=None):
+	user = str(ctx.author.id)
+	if user == '691576874261807134':
+		if mssg == None:
+			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
+			await ctx.send(embed=embed)
+		elif user not in await get_banned():
+			embed = discord.Embed(color=0x00ff00, description=user + ' (' + str(client.get_user(int(user))) + ') is now BANNED!')
+			await ctx.send(embed=embed)
+			await db_ban(mssg)
+		else:
+			embed = discord.Embed(color=0xf00f00, description=user + ' (' + str(client.get_user(int(user))) + ') is ALREADY banned!')
+			await ctx.send(embed=embed)
+
+@client.command(aliases=['see-bans'])
+async def see_bans(ctx):
+	user = str(ctx.author.id)
+	if user == '691576874261807134':
+		lst = await get_banned()
+		string = ''
+		for i in lst:
+			string += '\n' + i + str(client.get_user(int(i)))
+		embed = discord.Embed(color=0x00ff00, description='```' + string + '```')
+		await ctx.send(embed=embed)
+
+@client.command()
+async def unban(ctx, mssg=None):
+	user = str(ctx.author.id)
+	if user == '691576874261807134':
+		if mssg == None:
+			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
+			await ctx.send(embed=embed)
+		elif user in await get_banned():
+			embed = discord.Embed(color=0x00ff00, description=user + ' (' + str(client.get_user(int(user))) + ') is now NOT banned!')
+			await ctx.send(embed=embed)
+			await db_unban(mssg)
+		else:
+			embed = discord.Embed(color=0xf00f00, description=user + ' (' + str(client.get_user(int(user))) + ') was NOT banned!')
+			await ctx.send(embed=embed)
 
 server.s()
 client.run(os.getenv('TOKEN'))
