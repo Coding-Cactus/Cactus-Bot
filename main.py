@@ -1298,12 +1298,12 @@ async def ban(ctx, mssg=None):
 		if mssg == None:
 			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
 			await ctx.send(embed=embed)
-		elif user not in await get_banned():
-			embed = discord.Embed(color=0x00ff00, description=user + ' (' + str(client.get_user(int(user))) + ') is now BANNED!')
+		elif mssg not in await get_banned():
+			embed = discord.Embed(color=0x00ff00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is now BANNED!')
 			await ctx.send(embed=embed)
 			await db_ban(mssg)
 		else:
-			embed = discord.Embed(color=0xf00f00, description=user + ' (' + str(client.get_user(int(user))) + ') is ALREADY banned!')
+			embed = discord.Embed(color=0xf00f00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is ALREADY banned!')
 			await ctx.send(embed=embed)
 
 @client.command(aliases=['see-bans'])
@@ -1324,12 +1324,12 @@ async def unban(ctx, mssg=None):
 		if mssg == None:
 			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
 			await ctx.send(embed=embed)
-		elif user in await get_banned():
-			embed = discord.Embed(color=0x00ff00, description=user + ' (' + str(client.get_user(int(user))) + ') is now NOT banned!')
+		elif mssg in await get_banned():
+			embed = discord.Embed(color=0x00ff00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is now NOT banned!')
 			await ctx.send(embed=embed)
 			await db_unban(mssg)
 		else:
-			embed = discord.Embed(color=0xf00f00, description=user + ' (' + str(client.get_user(int(user))) + ') was NOT banned!')
+			embed = discord.Embed(color=0xf00f00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') was NOT banned!')
 			await ctx.send(embed=embed)
 
 server.s()
