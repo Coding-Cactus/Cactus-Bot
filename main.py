@@ -1,9 +1,7 @@
 import discord, os, server, math, time, replitdb, asyncio, random, threading
 from discord.ext import commands
 
-key=os.getenv('key')
 
-wkey=os.getenv('wkey')
 client = discord.Client()
 
 client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=True)
