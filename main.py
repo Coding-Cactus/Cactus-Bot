@@ -30,6 +30,7 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
+
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -41,6 +42,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
+	
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -506,7 +508,19 @@ async def idleRemoveMessageFromFile(msgID):
 			string += '\n' + lst[x]
 	await db.add(idleMessages='\n'.join(lst))
 
-
+async def leadRemoveMessageFromFile(msgID):
+	lst = []
+	lst2 =[]
+	f = str(await db.view('leadMessages')).split('\n')
+	for i in f:
+		lst.append(i.replace('\n',''))
+		lst2.append(i.replace('\n','').split('=')[0])
+	lst[lst2.index(msgID)] = ''
+	string = ''
+	for x in range(len(lst)):
+		if lst[x].replace('\n','') != '':
+			string += '\n' + lst[x]
+	await db.add(leadMessages='\n'.join(lst))
 
 def realNum(num):
 	try:
@@ -635,6 +649,9 @@ async def resetHabitat(user):
 			lst.append(i)
 	await db.add(habitatsBought='\n' + '\n'.join(lst))
 
+
+async def getLeadersLen():
+	return math.ceil(len(str(await db.view('score')).split('\n'))/10)
 
 async def db_ban(user):
 	lst = str(await db.view('banned')).split('\n')
@@ -995,6 +1012,65 @@ async def on_reaction_add(reaction, user):
 
 					await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
+	f3 = str(await db.view('leadMessages')).split('\n')
+	messages = []
+	pages = []
+	users = []
+	for i in f3:
+		if i.replace('\n','') != '':
+			messages.append(i.replace('\n','').split('=')[0])
+			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
+			users.append(i.replace('\n','').split('=')[1].split(',')[1])
+		msgID = str(reaction.message.id)
+	if msgID in messages:
+		index = messages.index(msgID)
+		if str(user.id) == users[index]:
+			if str(reaction) in ['⬅️','➡️']:
+				doStuff = False
+				if str(reaction) == '⬅️' and int(pages[index]) > 1:
+					page = int(pages[index]) - 1
+					doStuff = True
+				
+				elif str(reaction) == '➡️' and int(pages[index]) < await getLeadersLen():
+					page = int(pages[index]) + 1
+					doStuff = True
+				
+				if doStuff:
+					scores = []
+					players = []
+					orderedScores = []
+					f = str(await db.view('score')).split('\n')
+					for i in f:
+						if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
+							scores.append(int(i.replace('\n','').split('=')[1]))
+							orderedScores.append(int(i.replace('\n','').split('=')[1]))
+							players.append(int(i.replace('\n','').split('=')[0]))
+					orderedScores.sort(reverse=True)
+					orderedPlayers = []
+					for x in orderedScores:
+						orderedPlayers.append(players[scores.index(x)])
+						scores[scores.index(x)] = ''
+
+					description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
+					loops = 10 * page
+					start = (page-1)*10
+					if start < len(orderedPlayers):
+						if len(scores) < loops:
+							loops = len(scores)
+						for a in range(start, loops):
+							description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
+					else:
+						description += 'No more users :('
+					embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
+					msg = await reaction.message.channel.send(embed=embed)
+					await leadRemoveMessageFromFile(msgID)
+					await reaction.message.delete()
+
+					await msg.add_reaction('⬅️')
+					await msg.add_reaction('➡️')
+
+					await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
+
 
 @client.command(aliases=['habitat'])
 async def habitats(ctx):
@@ -1069,7 +1145,15 @@ async def change_habitat(ctx, mssg=None):
 
 					
 @client.command(aliases=['leaders', 'ranks', 'ranking'])
-async def leaderboard(ctx):
+async def leaderboard(ctx, mssg=None):
+	user = str(ctx.author.id)
+	if mssg == None:
+		page = 1
+	else:
+		try:
+			page = int(mssg)
+		except ValueError:
+			page = 1
 	scores = []
 	players = []
 	orderedScores = []
@@ -1085,14 +1169,23 @@ async def leaderboard(ctx):
 		orderedPlayers.append(players[scores.index(x)])
 		scores[scores.index(x)] = ''
 
-	description = '```'
-	loops = 10
-	if len(scores) < loops:
-		loops = len(scores)
-	for a in range(loops):
-		description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
+	description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
+	loops = 10 * page
+	start = (page-1)*10
+	if start < len(orderedPlayers):
+		if len(scores) < loops:
+			loops = len(scores)
+		for a in range(start, loops):
+			description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
+	else:
+		description += 'No more users :('
 	embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
-	await ctx.send(embed=embed)
+	msg = await ctx.send(embed=embed)
+
+	await msg.add_reaction('⬅️')
+	await msg.add_reaction('➡️')
+
+	await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + user)
 
 
 @client.command(aliases=['daily-reward','daily_reward', 'daily'])
