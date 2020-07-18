@@ -1098,9 +1098,7 @@ async def leaderboard(ctx):
 @client.command(aliases=['daily-reward','daily_reward', 'daily'])
 async def dailyreward(ctx):
 	user = str(ctx.message.author.id)
-	if await playerExist(user):
-		pass
-	else:
+	if not await playerExist(user):
 		await addUser(user)
 
 	dailyTime = await getDailyTime(user)
@@ -1109,9 +1107,10 @@ async def dailyreward(ctx):
 	difference2 = 3600*22 - difference
 	if difference >= 3600 * 22:
 		multiplier = int(await getMultplier(user))
-		embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(250 * multiplier) + ' cm!')
+		reward = int(await getGrowth(user)) * multiplier * 20
+		embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(reward) + ' cm!')
 		await ctx.send(embed=embed)
-		await updateScore(user, str(int(await getScore(user)) + 250 * multiplier))
+		await updateScore(user, str(int(await getScore(user)) + reward))
 		await updateDailyTime(user)
 	else:
 		hrs = str(round(difference2 // 3600))
