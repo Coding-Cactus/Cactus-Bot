@@ -1,4 +1,4 @@
-import discord, os, server, math, time, replitdb, asyncio, random, threading
+import discord, os, server, math, time, replitdb, asyncio, random, threading, sys
 from discord.ext import commands
 
 
@@ -1420,6 +1420,15 @@ async def unban(ctx, mssg=None):
 		else:
 			embed = discord.Embed(color=0xf00f00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') was NOT banned!')
 			await ctx.send(embed=embed)
+
+
+@client.command()
+@commands.is_owner()
+async def restart(ctx):
+  embed=discord.Embed(color=0x00ff00,title=":white_check_mark:",description="Successfully Restarted")
+  await ctx.send(embed=embed)
+  os.system("clear")
+  os.execv(sys.executable, ['python'] + sys.argv)
 
 server.s()
 client.run(os.getenv('TOKEN'))
