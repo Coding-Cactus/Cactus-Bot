@@ -1,4 +1,4 @@
-import discord, os, server, math, time, replitdb, asyncio, random, threading, sys
+import discord, os, server, math, time, replitdb, asyncio, random, threading, sys, requests
 from discord.ext import commands
 
 
@@ -42,7 +42,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-	
+
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -651,7 +651,101 @@ async def resetHabitat(user):
 
 
 async def getLeadersLen():
-	return math.ceil(len(str(await db.view('score')).split('\n'))/10)
+	total = 0
+	f = str(await db.view('score')).split('\n')
+	for i in f:
+		if i != '':
+			total += 1
+	return math.ceil(total/10)
+
+
+async def shopPage(page, userID):
+	items = await pageItems(page, userID)
+	description = 'Your Height: ' + await getScore(userID) + ' cm\n'
+	description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
+	
+	for i in items:
+		description += i
+	description += '```'
+
+	embed = discord.Embed(title='Shop (' + str(client.get_user(int(userID))) + ')', color=0x00ff00, description=description)
+	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
+	return embed
+
+
+async def idleShopPage(page, userID):
+	items = await idlePageItems(page, userID)
+	description = 'Your Height: ' + bold(commas(await getScore(userID))) + ' cm\n'
+	description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'					
+	for i in items:
+		description += i
+	description += '```'
+	embed = discord.Embed(title='Idle Shop (' + str(client.get_user(int(userID))) + ')', color=0x00ff00, description=description)
+	embed.set_footer(text='You can do \'=idle-shop [pageNum]\' to go straight to a certain page.')
+	return embed
+
+
+async def showLeaderboard(page):
+	scores = []
+	players = []
+	orderedScores = []
+	f = str(await db.view('score')).split('\n')
+	for i in f:
+		if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
+			scores.append(int(i.replace('\n','').split('=')[1]))
+			orderedScores.append(int(i.replace('\n','').split('=')[1]))
+			players.append(int(i.replace('\n','').split('=')[0]))
+	orderedScores.sort(reverse=True)
+	orderedPlayers = []
+	for x in orderedScores:
+		orderedPlayers.append(players[scores.index(x)])
+		scores[scores.index(x)] = ''
+	description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
+	loops = 10 * page
+	start = (page-1)*10
+	if start <= len(orderedPlayers):
+		if len(scores) < loops:
+			loops = len(scores)
+		for a in range(start, loops):
+			description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
+	else:
+		description += 'No more users :('
+	return discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
+	
+
+async def changePage(fName, reaction, user):
+	messages = []
+	pages = []
+	users = []
+	page = 0
+	doStuff = False
+	f = str(await db.view(fName)).split('\n')	
+	for i in f:
+		if i.replace('\n','') != '':
+			messages.append(i.replace('\n','').split('=')[0])
+			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
+			users.append(i.replace('\n','').split('=')[1].split(',')[1])
+		msgID = str(reaction.message.id)
+	if msgID in messages:
+		index = messages.index(msgID)
+		if fName == 'messages':
+			numPages = await getNumPages()
+		elif fName == 'idleMessages':
+			numPages = await idleGetNumPages()
+		elif fName == 'leadMessages':
+			numPages = await getLeadersLen()
+		if str(user.id) == users[index]:
+			if str(reaction) in ['⬅️','➡️']:
+				doStuff = False
+				if str(reaction) == '⬅️' and int(pages[index]) > 1:
+					page = str(int(pages[index]) - 1)
+					doStuff = True
+				
+				elif str(reaction) == '➡️' and int(pages[index]) < numPages:
+					page = str(int(pages[index]) + 1)
+					doStuff = True
+	return [doStuff, page, msgID]
+
 
 async def db_ban(user):
 	lst = str(await db.view('banned')).split('\n')
@@ -710,6 +804,19 @@ async def servers(ctx):
 	for i in client.guilds:
 		total += len(i.members)
 	embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)))
+	await ctx.send(embed=embed)
+
+
+@client.command()
+async def lines(ctx):
+	files = ['main.py', 'static/style.css', 'templates/index.html', 'server.py']
+	numLines = 0
+	for x in files:
+		with open(x) as txt:
+			lines=txt.read().splitlines()
+		numLines += len(lines)-lines.count("")
+	
+	embed = discord.Embed(color=0x00ff00, description='Total number of lines of code to make me: ' + str(numLines))
 	await ctx.send(embed=embed)
 
 
@@ -926,150 +1033,44 @@ async def idle_buy(ctx,*, mssg=None):
 
 @client.event
 async def on_reaction_add(reaction, user):
-	messages = []
-	pages = []
-	users = []
-	f = str(await db.view('messages')).split('\n')
-	
-	for i in f:
-		if i.replace('\n','') != '':
-			messages.append(i.replace('\n','').split('=')[0])
-			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
-			users.append(i.replace('\n','').split('=')[1].split(',')[1])
-		msgID = str(reaction.message.id)
-	if msgID in messages:
-		index = messages.index(msgID)
-		if str(user.id) == users[index]:
-			if str(reaction) in ['⬅️','➡️']:
-				doStuff = False
-				if str(reaction) == '⬅️' and int(pages[index]) > 1:
-					page = str(int(pages[index]) - 1)
-					doStuff = True
-				
-				elif str(reaction) == '➡️' and int(pages[index]) < await getNumPages():
-					page = str(int(pages[index]) + 1)
-					doStuff = True
-				
-				if doStuff:
-					items = await pageItems(page, str(user.id))
-					description = 'Your Height: ' + await getScore(str(user.id)) + ' cm\n'
-					description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
-					
-					for i in items:
-						description += i
-					description += '```'
+	lst = await changePage('messages', reaction, user)
+	doStuff = lst[0]
+	page = lst[1]
+	msgID = lst[2]
+	if doStuff:
+		embed = await shopPage(page, str(user.id))					
+		msg = await reaction.message.channel.send(embed=embed)
+		await removeMessageFromFile(msgID)
+		await reaction.message.delete()
+		await msg.add_reaction('⬅️')
+		await msg.add_reaction('➡️')
+		await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
-					embed = discord.Embed(title='Shop (' + str(client.get_user(user.id)) + ')', color=0x00ff00, description=description)
-					embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-					msg = await reaction.message.channel.send(embed=embed)
-					await removeMessageFromFile(msgID)
-					await reaction.message.delete()
+	lst = await changePage('idleMessages', reaction, user)
+	doStuff = lst[0]
+	page = lst[1]
+	msgID = lst[2]
+	if doStuff:
+		embed = await idleShopPage(page, str(user.id))
+		msg = await reaction.message.channel.send(embed=embed)
+		await idleRemoveMessageFromFile(msgID)
+		await reaction.message.delete()
+		await msg.add_reaction('⬅️')
+		await msg.add_reaction('➡️')
+		await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
-					await msg.add_reaction('⬅️')
-					await msg.add_reaction('➡️')
-
-					await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
-	f2 = str(await db.view('idleMessages')).split('\n')
-	messages = []
-	pages = []
-	users = []
-	for i in f2:
-		if i.replace('\n','') != '':
-			messages.append(i.replace('\n','').split('=')[0])
-			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
-			users.append(i.replace('\n','').split('=')[1].split(',')[1])
-		msgID = str(reaction.message.id)
-	if msgID in messages:
-		index = messages.index(msgID)
-		if str(user.id) == users[index]:
-			if str(reaction) in ['⬅️','➡️']:
-				doStuff = False
-				if str(reaction) == '⬅️' and int(pages[index]) > 1:
-					page = str(int(pages[index]) - 1)
-					doStuff = True
-				
-				elif str(reaction) == '➡️' and int(pages[index]) < await idleGetNumPages():
-					page = str(int(pages[index]) + 1)
-					doStuff = True
-				
-				if doStuff:
-					items = await idlePageItems(page, str(user.id))
-					description = 'Your Height: ' + bold(commas(await getScore(str(user.id)))) + ' cm\n'
-					description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'
-					
-					for i in items:
-						description += i
-					description += '```'
-
-					embed = discord.Embed(title='Idle Shop (' + str(client.get_user(user.id)) + ')', color=0x00ff00, description=description)
-					embed.set_footer(text='You can do \'=idle-shop [pageNum]\' to go straight to a certain page.')
-					msg = await reaction.message.channel.send(embed=embed)
-					await idleRemoveMessageFromFile(msgID)
-					await reaction.message.delete()
-
-					await msg.add_reaction('⬅️')
-					await msg.add_reaction('➡️')
-
-					await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
-
-	f3 = str(await db.view('leadMessages')).split('\n')
-	messages = []
-	pages = []
-	users = []
-	for i in f3:
-		if i.replace('\n','') != '':
-			messages.append(i.replace('\n','').split('=')[0])
-			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
-			users.append(i.replace('\n','').split('=')[1].split(',')[1])
-		msgID = str(reaction.message.id)
-	if msgID in messages:
-		index = messages.index(msgID)
-		if str(user.id) == users[index]:
-			if str(reaction) in ['⬅️','➡️']:
-				doStuff = False
-				if str(reaction) == '⬅️' and int(pages[index]) > 1:
-					page = int(pages[index]) - 1
-					doStuff = True
-				
-				elif str(reaction) == '➡️' and int(pages[index]) < await getLeadersLen():
-					page = int(pages[index]) + 1
-					doStuff = True
-				
-				if doStuff:
-					scores = []
-					players = []
-					orderedScores = []
-					f = str(await db.view('score')).split('\n')
-					for i in f:
-						if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
-							scores.append(int(i.replace('\n','').split('=')[1]))
-							orderedScores.append(int(i.replace('\n','').split('=')[1]))
-							players.append(int(i.replace('\n','').split('=')[0]))
-					orderedScores.sort(reverse=True)
-					orderedPlayers = []
-					for x in orderedScores:
-						orderedPlayers.append(players[scores.index(x)])
-						scores[scores.index(x)] = ''
-
-					description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
-					loops = 10 * page
-					start = (page-1)*10
-					if start < len(orderedPlayers):
-						if len(scores) < loops:
-							loops = len(scores)
-						for a in range(start, loops):
-							description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
-					else:
-						description += 'No more users :('
-					embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
-					msg = await reaction.message.channel.send(embed=embed)
-					await leadRemoveMessageFromFile(msgID)
-					await reaction.message.delete()
-
-					await msg.add_reaction('⬅️')
-					await msg.add_reaction('➡️')
-
-					await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
+	lst = await changePage('leadMessages', reaction, user)
+	doStuff = lst[0]
+	page = int(lst[1])
+	msgID = lst[2]
+	if doStuff:
+		embed = await showLeaderboard(page)
+		msg = await reaction.message.channel.send(embed=embed)
+		await leadRemoveMessageFromFile(msgID)
+		await reaction.message.delete()
+		await msg.add_reaction('⬅️')
+		await msg.add_reaction('➡️')
+		await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
 
 
 @client.command(aliases=['habitat'])
@@ -1154,32 +1155,7 @@ async def leaderboard(ctx, mssg=None):
 			page = int(mssg)
 		except ValueError:
 			page = 1
-	scores = []
-	players = []
-	orderedScores = []
-	f = str(await db.view('score')).split('\n')
-	for i in f:
-		if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
-			scores.append(int(i.replace('\n','').split('=')[1]))
-			orderedScores.append(int(i.replace('\n','').split('=')[1]))
-			players.append(int(i.replace('\n','').split('=')[0]))
-	orderedScores.sort(reverse=True)
-	orderedPlayers = []
-	for x in orderedScores:
-		orderedPlayers.append(players[scores.index(x)])
-		scores[scores.index(x)] = ''
-
-	description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
-	loops = 10 * page
-	start = (page-1)*10
-	if start < len(orderedPlayers):
-		if len(scores) < loops:
-			loops = len(scores)
-		for a in range(start, loops):
-			description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
-	else:
-		description += 'No more users :('
-	embed = discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
+	embed = await showLeaderboard(page)
 	msg = await ctx.send(embed=embed)
 
 	await msg.add_reaction('⬅️')
@@ -1200,7 +1176,7 @@ async def dailyreward(ctx):
 	difference2 = 3600*22 - difference
 	if difference >= 3600 * 22:
 		multiplier = int(await getMultplier(user))
-		reward = int(await getGrowth(user)) * multiplier * 20
+		reward = int(await getGrowth(user)) * multiplier * 50
 		embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(reward) + ' cm!')
 		await ctx.send(embed=embed)
 		await updateScore(user, str(int(await getScore(user)) + reward))
@@ -1267,6 +1243,18 @@ async def on_message(message):
 @client.command()
 async def hug(ctx):
 	await ctx.send(random.choice(['https://tenor.com/view/red-panda-tackle-surprised-hug-cute-gif-12661024','https://tenor.com/view/cat-love-huge-hug-big-gif-11990658']))
+
+@client.command()
+async def cactus(ctx):
+	r=requests.get("https://gallery.codingcactus.codes/api/random").json()
+	cactus_name=r["name"]
+	cactus_url=r["url"]
+
+	embed=discord.Embed(color=0x00ff00, title=cactus_name)
+	embed.set_image(url=cactus_url)
+
+	await ctx.send(embed=embed)
+
 
 
 #-------------------------------------------------------
