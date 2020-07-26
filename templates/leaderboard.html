@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Cactus Bot - leaderboard{% endblock%}
+
+{% block content %}
+
+<h3>Leaderboard</h3>
+<div id="leaderboard">
+	<ol>
+		{% for i in range(length) %}
+		{% if i == 0 %}
+		<li id="one"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>
+		{% elif i == 1 %}
+		<li id="two"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>		
+		{% elif i == 2 %}
+		<li id="three"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>
+		{% else %}
+		<li>{{players[i]}}: {{scores[i]}} cm</li>
+		{% endif %}
+		{% endfor %}
+	</ol>
+</div>
+
+
+{% endblock %}

@@ -1,28 +1,13 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="description" content="A fun discord bot where you live the life of a cactus and try to become the tallest!" >
-		<meta name="author" content="CodingCactus" >
-		<meta name="keywords" content="discord, discord-bot, cactus, cactus-bot" >
-    <meta name="viewport" content="width=device-width">
-    <title>Cactus Bot</title>
-		<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2&display=swap" rel="stylesheet">
-    <link href="static/style.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
-		<main>
-			<h1>Cactus Bot</h1>
+{% extends "base.html" %}
 
-			<h2>
-				A fun discord bot where you live the life of a cactus and try to become the tallest!
-			</h2>
+{% block content %}
+			
 
 			<h3>Info</h3>
 			<div id='info'>
 				<p>Prefix: <code>=</code></p>
 				<p>Source Code: <a href='https://repl.it/@CodingCactus/Cactus-Bot-2'>https://repl.it/@CodingCactus/Cactus-Bot-2</a> | <a href='https://github.com/Coding-Cactus/Cactus-Bot'>https://github.com/Coding-Cactus/Cactus-Bot</a></p>
-				<p>Invite link: <a href='https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0'> https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0</a></p>
+				<p>Invite link: <a href='https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0' style="word-break: break-all;">https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0</a></p>
 			</div>
 
 			<h3>Commands</h3>
@@ -162,6 +147,5 @@
 				<p>Discord: CodingCactus#6777</p>
 				<p>repl.it: <a href='https://repl.it/@CodingCactus'>https://repl.it/@CodingCactus</a></p>
 				<p>GitHub: <a href='https://github.com/Coding-Cactus'>https://github.com/Coding-Cactus</a></p>
-		</main>
-  </body>
-</html>
+
+	{% endblock %}

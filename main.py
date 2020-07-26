@@ -20,6 +20,12 @@ async def on_ready():
 	print('In ' + str(len(client.guilds)) + ' servers')
 	for i in client.guilds:
 		print(i)
+	
+	names = []
+	for x in str(await db.view("score")).split("\n"):
+		if x != '':
+			names.append(x.split("=")[0] + "=" + str(client.get_user(int(x.split("=")[0]))))
+	await db.add(names="\n".join(names))
 	#print(await db.view('shop'))
 	#print(await db.view('score'))
 	#print(await db.view('growth'))
@@ -100,6 +106,7 @@ async def addUser(user):
 	await db.add(times=str(await db.view('times')) + '\n' + user + '=0')
 	await db.add(daily=str(await db.view('daily')) + '\n' + user + '=0')
 	await db.add(idle=str(await db.view('idle')) + '\n' + user + '=0')
+	await db.add(names=str(await db.view('names')) + '\n' + user + '=' + str(client.get_user(int(user))))
 
 	lst = str(await db.view('shop')).split('\n')
 	new = '\n' + user + '='
@@ -809,7 +816,7 @@ async def servers(ctx):
 
 @client.command()
 async def lines(ctx):
-	files = ['main.py', 'static/style.css', 'templates/index.html', 'server.py']
+	files = ['main.py', 'static/style.css', 'templates/index.html', 'templates/base.html', 'templates/leaderboard.html', 'server.py']
 	numLines = 0
 	for x in files:
 		with open(x) as txt:

@@ -85,3 +85,30 @@ code {
 	margin-top: 0;
 	margin-left: 15px;
 }
+
+#one{
+	color: #ffd700;
+}
+
+#two{
+	color: #c0c0c0;
+}
+
+#three{
+	color: #cd7f32;
+}
+
+nav ul li{
+	display: inline;
+	margin-right: 5px;
+	font-size: 20px;
+}
+
+nav, nav ul li{
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+nav {
+	border-bottom: 2px solid #131;
+}
