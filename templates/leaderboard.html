@@ -9,13 +9,13 @@
 	<ol>
 		{% for i in range(length) %}
 		{% if i == 0 %}
-		<li id="one"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>
+		<li id="one"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
 		{% elif i == 1 %}
-		<li id="two"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>		
+			<li id="two"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
 		{% elif i == 2 %}
-		<li id="three"><strong>{{players[i]}}: {{scores[i]}} cm</strong></li>
+			<li id="three"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
 		{% else %}
-		<li>{{players[i]}}: {{scores[i]}} cm</li>
+		<li><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</li>
 		{% endif %}
 		{% endfor %}
 	</ol>

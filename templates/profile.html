@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Cactus Bot - {{user['name']}}{% endblock%}
+
+{% block content %}
+
+<h2 id="prof"><img src="{{pfp}}" alt="{{user['name']}}'s pfp">{{user['name']}}</h2>
+
+<div id="stats">
+	<h3>Stats</h3>
+	<p>Height: <strong>{{user['height']}} cm</strong></p>
+	<p>Height per Growth: <strong>{{user['hpg']}} cm</strong></p>
+	<p>Height per Minute: <strong>{{user['hpm']}} cm</strong></p>
+	<p>Multiplier: <strong>{{user['mult']}}x</strong></p>
+</div>
+
+{% endblock %}

@@ -28,6 +28,14 @@ h2{
 	border-bottom: 2px solid #131;
 }
 
+h2 img{
+	display: block;
+	height: 200px;
+	border-radius: 100px;
+}
+#prof {
+	margin-top: 10px;
+}
 h3 {
 	font-size: 30px;
 	margin: 0;
@@ -86,18 +94,6 @@ code {
 	margin-left: 15px;
 }
 
-#one{
-	color: #ffd700;
-}
-
-#two{
-	color: #c0c0c0;
-}
-
-#three{
-	color: #cd7f32;
-}
-
 nav ul li{
 	display: inline;
 	margin-right: 5px;
@@ -111,4 +107,48 @@ nav, nav ul li{
 
 nav {
 	border-bottom: 2px solid #131;
+}
+
+form {
+	margin: auto;
+	margin-top: 10px;
+	outline: none;
+}
+
+form #search{
+	width: 60vw;
+}
+
+input, button{
+	color: #ddd;
+	height: 25px;
+	border-radius: 10px;
+	border: 2px solid #aca;
+	margin: auto;
+	background-color: #252;
+	font-size: 14px;
+}
+
+#leaderboard a, #leaderboard{
+	color: #ccc;
+}
+
+#leaderboard #one a, #leaderboard #one{
+	color: #ffd700;
+}
+
+#leaderboard #two a, #leaderboard #two{
+	color: #c0c0c0;
+}
+
+#leaderboard #three a, #leaderboard #three{
+	color: #cd7f32;
+}
+
+#stats p{
+	color: #3cc;
+}
+
+#stats strong{
+	color: yellow;
 }

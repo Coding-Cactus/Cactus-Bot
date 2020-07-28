@@ -21,15 +21,12 @@ async def on_ready():
 	for i in client.guilds:
 		print(i)
 	
-	names = []
-	for x in str(await db.view("score")).split("\n"):
-		if x != '':
-			names.append(x.split("=")[0] + "=" + str(client.get_user(int(x.split("=")[0]))))
-	await db.add(names="\n".join(names))
+	
 	#print(await db.view('shop'))
 	#print(await db.view('score'))
 	#print(await db.view('growth'))
 	set_interval(perSec, 60)
+	set_interval2(updateUsers, 600)
 	global uptime
 	uptime = time.time()
 
@@ -84,6 +81,17 @@ def commas(i):
 
 def bold(i):
 	return '**'+i+'**'
+	
+def pfp(ID):
+	try:
+		user = client.get_user(int(ID))
+		if user.is_avatar_animated() != True:
+			format = "png"
+		else:
+			format = "gif"
+		return user.avatar_url_as(format = format)
+	except AttributeError:
+		return None
 
 async def playerExist(user):
 	lst = []
@@ -97,8 +105,6 @@ async def playerExist(user):
 		if lst[i].split('=')[0] == user:
 			exist = True
 	return exist
-
-
 
 async def addUser(user):
 	await db.add(score=str(await db.view('score')) + '\n' + user + '=0')
@@ -789,7 +795,24 @@ def set_interval(func, sec):
 	t = threading.Timer(sec, func_wrapper)
 	t.start()
 	return t
-
+	
+async def updateUsers():
+	names = []
+	pfps = []
+	for x in str(await db.view("score")).split("\n"):
+		if x != '':
+			names.append(x.split("=")[0] + "=" + str(client.get_user(int(x.split("=")[0]))))
+			pfps.append(x.split('=')[0] + '=' + str(pfp(x.split('=')[0])))
+	await db.add(names="\n".join(names))
+	await db.add(pfps="\n".join(pfps))
+	
+def set_interval2(func, sec):
+	def func_wrapper2():
+		set_interval2(updateUsers, 600)
+		asyncio.run(updateUsers())
+	t = threading.Timer(sec, func_wrapper2)
+	t.start()
+	return t
 
 #-------------------------------------------------------
 #						Commands

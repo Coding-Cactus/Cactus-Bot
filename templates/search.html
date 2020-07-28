@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Cactus Bot - Search{% endblock%}
+
+{% block content %}
+
+<form role="form" method='POST' action='/search'>
+	<input type="text" name="name" id="search" placeholder="Enter user..." required>
+	<button type="submit">Search</button>
+</form>
+	
+{% if found %}
+<ul>
+{% for i in results %}
+<li><a href="/user/{{i['id']}}">{{i['tag']}}</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}
