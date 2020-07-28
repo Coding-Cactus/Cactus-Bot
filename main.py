@@ -840,7 +840,7 @@ async def servers(ctx):
 
 @client.command()
 async def lines(ctx):
-	files = ['main.py', 'static/style.css', 'templates/index.html', 'templates/base.html', 'templates/leaderboard.html', 'server.py']
+	files = ['main.py', 'static/style.css', 'templates/index.html', 'templates/base.html', 'templates/leaderboard.html', 'templates/notfound.html', 'templates/profile.html', 'templates/search.html', 'server.py']
 	numLines = 0
 	for x in files:
 		with open(x) as txt:
