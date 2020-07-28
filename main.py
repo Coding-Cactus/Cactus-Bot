@@ -54,7 +54,7 @@ async def on_command_error(ctx, error):
 async def help(ctx, command=None):
 	if not command:
 		embed=discord.Embed(title="Commands", color=0x00ff00)
-		embed.add_field(name='info', value='Info about the bot, also it\'s invite link.', inline=False)
+		embed.add_field(name='info', value='Info about the bot, also its invite link.', inline=False)
 		embed.add_field(name='prof', value='See your profile (stats).')
 		embed.add_field(name='grow', value='Grow and try to become a big cactus!')
 		embed.add_field(name='shop', value='Trade in some of your height for increases in height per growth.')
@@ -364,7 +364,7 @@ async def getPrice(item, user):
 	for i in f2:
 		items.append(i.split('=')[0])
 		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-	return round(int(prices[item]) * int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]) * 1.5)
+	return round(int(prices[item]) * 1.138 ** int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]))
 
 async def idleGetPrice(item, user):
 	items = []
@@ -379,7 +379,7 @@ async def idleGetPrice(item, user):
 	for i in f2:
 		items.append(i.split('=')[0])
 		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-	return round(int(prices[item]) * int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]) * 1.5)
+	return round(int(prices[item]) * 1.138 ** int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]))
 
 
 async def getHPG(item):
@@ -421,7 +421,7 @@ async def idlePageItems(num, user):
 		for q in range(4):
 			if x*4+q < len(items):
 				item = items[x*4+q]
-				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q]) * 1.5))) + ' cm\nIncrease in cm per minute: ' + commas(hpg[item]) + '\n')
+				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * 1.138 ** int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q])))) + ' cm\nIncrease in cm per minute: ' + commas(hpg[item]) + '\n')
 		pages['page'+str(x+1)] = pageContent
 		pageContent = []
 
@@ -454,7 +454,7 @@ async def pageItems(num, user):
 		for q in range(4):
 			if x*4+q < len(items):
 				item = items[x*4+q]
-				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q]) * 1.5))) + ' cm\nIncrease in cm per growth: ' + commas(hpg[item]) + '\n')
+				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * 1.138 ** int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q])))) + ' cm\nIncrease in cm per growth: ' + commas(hpg[item]) + '\n')
 		pages['page'+str(x+1)] = pageContent
 		pageContent = []
 

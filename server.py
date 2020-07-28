@@ -12,14 +12,8 @@ def commas(i):
 	for x in range(len(i)//3):s=","+i[-3:]+s;i=i[:-3]
 	if i=="":s=s[1:]
 	return(i+s)
-
-
-@app.route('/')
-def main():
-	return flask.render_template('index.html')
 	
-@app.route('/leaderboard')
-def leaders():
+def ranking():
 	scores = []
 	players = []
 	orderedScores = []
@@ -39,7 +33,18 @@ def leaders():
 	for x in orderedScores:
 		orderedPlayers.append([tags[ids.index(str(players[scores.index(x)]))],players[scores.index(x)]])
 		scores[scores.index(x)] = ''
-		
+	return [orderedScores, orderedPlayers]
+
+
+@app.route('/')
+def main():
+	return flask.render_template('index.html')
+	
+@app.route('/leaderboard')
+def leaders():
+	ranks = ranking()
+	orderedScores = ranks[0]
+	orderedPlayers = ranks[1]
 	
 	for a in range(len(orderedScores)):
 		orderedScores[a] = commas(orderedScores[a])
@@ -88,6 +93,12 @@ def profile(ID):
 			h2.append(i.split('=')[1].split(',')[1])
 		f4 = f2[f3.index(ID)].split(',')
 		stats['mult'] = h2[f4.index('1')]
+		
+		ranks = ranking()[1]
+		for i in range(len(ranks)):
+			if str(ranks[i][1]) == ID:
+				stats['rank'] = str(i + 1)
+				break
 		
 		return flask.render_template("profile.html", user=stats, pfp=pfp)
 	else:
