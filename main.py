@@ -113,6 +113,7 @@ async def addUser(user):
 	await db.add(daily=str(await db.view('daily')) + '\n' + user + '=0')
 	await db.add(idle=str(await db.view('idle')) + '\n' + user + '=0')
 	await db.add(names=str(await db.view('names')) + '\n' + user + '=' + str(client.get_user(int(user))))
+	await db.add(pfps=str(await db.view('pfps')) + '\n' + user + '=' + str(pfp(user)))
 
 	lst = str(await db.view('shop')).split('\n')
 	new = '\n' + user + '='
