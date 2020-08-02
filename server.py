@@ -69,16 +69,19 @@ def profile(ID):
 		for s in scores:
 			if s.split('=')[0] == ID:
 				stats['height'] = commas(s.split('=')[1])
+				break
 		
 		hpgs = str(db.view('growth')).split('\n')
 		for h in hpgs:
 			if h.split('=')[0] == ID:
 				stats['hpg'] = commas(h.split('=')[1])
+				break
 				
 		hpms = str(db.view('idle')).split('\n')
 		for hpm in hpms:
 			if hpm.split('=')[0] == ID:
 				stats['hpm'] = commas(hpm.split('=')[1])
+				break
 		
 		f = str(db.view('habitatsBought')).split('\n')
 		f2 = []

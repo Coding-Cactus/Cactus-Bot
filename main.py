@@ -1,4 +1,4 @@
-import discord, os, server, math, time, replitdb, asyncio, random, threading, sys, requests
+import discord, os, server, math, time, requests, replitdb, asyncio, random, threading, sys
 from discord.ext import commands
 
 
@@ -33,7 +33,6 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -45,7 +44,6 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -107,34 +105,34 @@ async def playerExist(user):
 	return exist
 
 async def addUser(user):
-	await db.add(score=str(await db.view('score')) + '\n' + user + '=0')
-	await db.add(growth=str(await db.view('growth')) + '\n' + user + '=2')
-	await db.add(times=str(await db.view('times')) + '\n' + user + '=0')
-	await db.add(daily=str(await db.view('daily')) + '\n' + user + '=0')
-	await db.add(idle=str(await db.view('idle')) + '\n' + user + '=0')
-	await db.add(names=str(await db.view('names')) + '\n' + user + '=' + str(client.get_user(int(user))))
-	await db.add(pfps=str(await db.view('pfps')) + '\n' + user + '=' + str(pfp(user)))
+	await db.set(score=str(await db.view('score')) + '\n' + user + '=0')
+	await db.set(growth=str(await db.view('growth')) + '\n' + user + '=2')
+	await db.set(times=str(await db.view('times')) + '\n' + user + '=0')
+	await db.set(daily=str(await db.view('daily')) + '\n' + user + '=0')
+	await db.set(idle=str(await db.view('idle')) + '\n' + user + '=0')
+	await db.set(names=str(await db.view('names')) + '\n' + user + '=' + str(client.get_user(int(user))))
+	await db.set(pfps=str(await db.view('pfps')) + '\n' + user + '=' + str(pfp(user)))
 
 	lst = str(await db.view('shop')).split('\n')
 	new = '\n' + user + '='
 	for x in lst:
 		new += '1,'
 	new = new[:-1]
-	await db.add(bought=str(await db.view('bought')) + new)
+	await db.set(bought=str(await db.view('bought')) + new)
 
 	lst2 = str(await db.view('idleShop')).split('\n')
 	new = '\n' + user + '='
 	for x in lst2:
 		new += '1,'
 	new = new[:-1]
-	await db.add(idleBought=str(await db.view('idleBought')) + new)
+	await db.set(idleBought=str(await db.view('idleBought')) + new)
 
 	lst3 = str(await db.view('habitats')).split('\n')
 	new = '\n' + user + '=1,'
 	for x in lst3:
 		new += '0,'
 	new = new[:-3]
-	await db.add(habitatsBought=str(await db.view('habitatsBought')) + new)
+	await db.set(habitatsBought=str(await db.view('habitatsBought')) + new)
 		
 		
 
@@ -181,7 +179,7 @@ async def updateScore(user, score):
 		lst2.append(i.replace('\n','').split('=')[0])
 	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(score)
 	
-	await db.add(score='\n'.join(lst))
+	await db.set(score='\n'.join(lst))
 
 
 
@@ -193,7 +191,7 @@ async def updateHPG(user, hpg):
 		lst.append(i.replace('\n',''))
 		lst2.append(i.replace('\n','').split('=')[0])
 	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(hpg)
-	await db.add(growth='\n'.join(lst))
+	await db.set(growth='\n'.join(lst))
 
 
 async def getIdle(user):
@@ -215,7 +213,7 @@ async def updateIdle(user, score):
 		lst2.append(i.replace('\n','').split('=')[0])
 	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(score)
 	
-	await db.add(idle='\n'.join(lst))
+	await db.set(idle='\n'.join(lst))
 
 
 async def updateBought(user, item):
@@ -260,7 +258,7 @@ async def updateBought(user, item):
 		comma = ''
 
 	amountBought[userIDs.index(user)] =  amountBought[userIDs.index(user)].split('=')[0] + '=' + strPreAmount + str(newAmount) + comma + strPostAmount
-	await db.add(bought='\n'.join(amountBought))
+	await db.set(bought='\n'.join(amountBought))
 
 
 async def idleUpdateBought(user, item):
@@ -305,7 +303,7 @@ async def idleUpdateBought(user, item):
 		comma = ''
 
 	amountBought[userIDs.index(user)] =  amountBought[userIDs.index(user)].split('=')[0] + '=' + strPreAmount + str(newAmount) + comma + strPostAmount
-	await db.add(idleBought='\n'.join(amountBought))
+	await db.set(idleBought='\n'.join(amountBought))
 
 
 
@@ -318,7 +316,7 @@ async def updateTime(user):
 		lst2.append(i.replace('\n','').split('=')[0])
 	
 	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(time.time())
-	await db.add(times='\n'.join(lst))
+	await db.set(times='\n'.join(lst))
 
 
 
@@ -506,7 +504,7 @@ async def removeMessageFromFile(msgID):
 	for x in range(len(lst)):
 		if lst[x].replace('\n','') != '':
 			string += '\n' + lst[x]
-	await db.add(messages='\n'.join(lst))
+	await db.set(messages='\n'.join(lst))
 
 async def idleRemoveMessageFromFile(msgID):
 	lst = []
@@ -520,7 +518,7 @@ async def idleRemoveMessageFromFile(msgID):
 	for x in range(len(lst)):
 		if lst[x].replace('\n','') != '':
 			string += '\n' + lst[x]
-	await db.add(idleMessages='\n'.join(lst))
+	await db.set(idleMessages='\n'.join(lst))
 
 async def leadRemoveMessageFromFile(msgID):
 	lst = []
@@ -534,7 +532,7 @@ async def leadRemoveMessageFromFile(msgID):
 	for x in range(len(lst)):
 		if lst[x].replace('\n','') != '':
 			string += '\n' + lst[x]
-	await db.add(leadMessages='\n'.join(lst))
+	await db.set(leadMessages='\n'.join(lst))
 
 def realNum(num):
 	try:
@@ -561,7 +559,7 @@ async def updateDailyTime(user):
 		if lst[i].split('=')[0] == user:
 			index = i
 	lst[index] = lst[index].split('=')[0] + '=' + str(time.time())
-	await db.add(daily='\n'.join(lst))
+	await db.set(daily='\n'.join(lst))
 
 
 async def resetBought(user):
@@ -570,13 +568,13 @@ async def resetBought(user):
 	for i in boughtStuff:
 		if i.split('=')[0] != user:
 			lst.append(i)
-	await db.add(bought='\n' + '\n'.join(lst))
+	await db.set(bought='\n' + '\n'.join(lst))
 	lst2 = str(await db.view('shop')).split('\n')
 	new = '\n' + user + '='
 	for x in lst2:
 		new += '1,'
 	new = new[:-1]
-	await db.add(bought=str(await db.view('bought')) + new)
+	await db.set(bought=str(await db.view('bought')) + new)
 
 async def idleResetBought(user):
 	lst = []
@@ -584,13 +582,13 @@ async def idleResetBought(user):
 	for i in boughtStuff:
 		if i.split('=')[0] != user:
 			lst.append(i)
-	await db.add(idleBought='\n' + '\n'.join(lst))
+	await db.set(idleBought='\n' + '\n'.join(lst))
 	lst2 = str(await db.view('idleShop')).split('\n')
 	new = '\n' + user + '='
 	for x in lst2:
 		new += '1,'
 	new = new[:-1]
-	await db.add(idleBought=str(await db.view('idleBought')) + new)
+	await db.set(idleBought=str(await db.view('idleBought')) + new)
 
 async def getHabitats():
 	f = str(await db.view('habitats')).split('\n')
@@ -631,7 +629,7 @@ async def updateHabitatBought(user, item):
 			lst.append(i.split('=')[0] + '=' + '2,' * len(i.split('=')[1].split(',')[:index]) + '1' + ',0' * len(i.split('=')[1].split(',')[index+1:]))
 		else:
 			lst.append(i)
-	await db.add(habitatsBought='\n'.join(lst))
+	await db.set(habitatsBought='\n'.join(lst))
 
 async def getMultplier(user):
 	f = str(await db.view('habitatsBought')).split('\n')
@@ -661,7 +659,7 @@ async def resetHabitat(user):
 			lst.append(i.split('=')[0] + '=1' + extra)
 		else:
 			lst.append(i)
-	await db.add(habitatsBought='\n' + '\n'.join(lst))
+	await db.set(habitatsBought='\n' + '\n'.join(lst))
 
 
 async def getLeadersLen():
@@ -764,7 +762,7 @@ async def changePage(fName, reaction, user):
 async def db_ban(user):
 	lst = str(await db.view('banned')).split('\n')
 	lst.append(user)
-	await db.add(banned='\n'.join(lst))
+	await db.set(banned='\n'.join(lst))
 
 async def get_banned():
 	return str(await db.view('banned')).split('\n')
@@ -775,7 +773,7 @@ async def db_unban(user):
 	for i in lst:
 		if i != user:
 			lst2.append(i)
-	await db.add(banned='\n'.join(lst2))
+	await db.set(banned='\n'.join(lst2))
 
 async def perSec():
 	stuff = str(await db.view('idle')).split('\n')
@@ -804,8 +802,8 @@ async def updateUsers():
 		if x != '':
 			names.append(x.split("=")[0] + "=" + str(client.get_user(int(x.split("=")[0]))))
 			pfps.append(x.split('=')[0] + '=' + str(pfp(x.split('=')[0])))
-	await db.add(names="\n".join(names))
-	await db.add(pfps="\n".join(pfps))
+	await db.set(names="\n".join(names))
+	await db.set(pfps="\n".join(pfps))
 	
 def set_interval2(func, sec):
 	def func_wrapper2():
@@ -942,7 +940,7 @@ async def shop(ctx, mssg=None):
 	await msg.add_reaction('⬅️')
 	await msg.add_reaction('➡️')
 
-	await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
+	await db.set(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
 
 	lst = str(await db.view('messages')).split('\n')
 	lst2 = []
@@ -950,7 +948,7 @@ async def shop(ctx, mssg=None):
 		for l in lst:
 			if l != '':
 				lst2.append(l)
-		await db.add(messages='\n' + '\n'.join(lst2[32:]))
+		await db.set(messages='\n' + '\n'.join(lst2[32:]))
 
 
 
@@ -980,7 +978,7 @@ async def idle_shop(ctx, mssg=None):
 	await msg.add_reaction('⬅️')
 	await msg.add_reaction('➡️')
 
-	await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
+	await db.set(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
 
 	lst = str(await db.view('idleMessages')).split('\n')
 	lst2 = []
@@ -988,7 +986,7 @@ async def idle_shop(ctx, mssg=None):
 		for l in lst:
 			if l != '':
 				lst2.append(l)
-		await db.add(idleMessages='\n' + '\n'.join(lst2[32:]))
+		await db.set(idleMessages='\n' + '\n'.join(lst2[32:]))
 
 
 @client.command()
@@ -1075,7 +1073,7 @@ async def on_reaction_add(reaction, user):
 		await reaction.message.delete()
 		await msg.add_reaction('⬅️')
 		await msg.add_reaction('➡️')
-		await db.add(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
+		await db.set(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
 	lst = await changePage('idleMessages', reaction, user)
 	doStuff = lst[0]
@@ -1088,7 +1086,7 @@ async def on_reaction_add(reaction, user):
 		await reaction.message.delete()
 		await msg.add_reaction('⬅️')
 		await msg.add_reaction('➡️')
-		await db.add(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
+		await db.set(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
 
 	lst = await changePage('leadMessages', reaction, user)
 	doStuff = lst[0]
@@ -1101,7 +1099,7 @@ async def on_reaction_add(reaction, user):
 		await reaction.message.delete()
 		await msg.add_reaction('⬅️')
 		await msg.add_reaction('➡️')
-		await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
+		await db.set(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
 
 
 @client.command(aliases=['habitat'])
@@ -1192,7 +1190,7 @@ async def leaderboard(ctx, mssg=None):
 	await msg.add_reaction('⬅️')
 	await msg.add_reaction('➡️')
 
-	await db.add(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + user)
+	await db.set(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + user)
 
 
 @client.command(aliases=['daily-reward','daily_reward', 'daily'])
@@ -1268,6 +1266,7 @@ async def on_message(message):
 	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
 	if str(message.author.id) not in await get_banned():
+		
 		await client.process_commands(message)
 
 
@@ -1301,7 +1300,7 @@ async def cooldown(ctx, mssg=None):
 		else:
 			cooldownNum = ctx.message.content.replace('=cooldown ','')
 			if realNum(cooldownNum):
-				await db.add(cooldown=cooldownNum)
+				await db.set(cooldown=cooldownNum)
 				embed = discord.Embed(color=0x00ff00, description='Cooldown set to ' + bold(cooldownNum))
 				await ctx.send(embed=embed)
 			else:
@@ -1320,7 +1319,7 @@ async def additem(ctx, mssg=None):
 			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
 			await ctx.send(embed=embed)
 		else:
-			await db.add(shop=str(await db.view('shop')) + '\n' + ctx.message.content.lower().replace('=additem ',''))
+			await db.set(shop=str(await db.view('shop')) + '\n' + ctx.message.content.lower().replace('=additem ',''))
 			lst = []
 			boughtStuff = str(await db.view('bought')).split('\n')
 			for i in boughtStuff:
@@ -1329,7 +1328,7 @@ async def additem(ctx, mssg=None):
 				else:
 					add = ''
 				lst.append(i + add)
-			await db.add(bought='\n'.join(lst))
+			await db.set(bought='\n'.join(lst))
 	else:
 		embed = discord.Embed(color=0xff0000,description='You are not my creator!\nOnly they can use this command!')
 		await ctx.send(embed=embed)
@@ -1341,7 +1340,7 @@ async def addidleitem(ctx, mssg=None):
 			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
 			await ctx.send(embed=embed)
 		else:
-			await db.add(idleShop=str(await db.view('idleShop')) + '\n' + ctx.message.content.lower().replace('=addidleitem ',''))
+			await db.set(idleShop=str(await db.view('idleShop')) + '\n' + ctx.message.content.lower().replace('=addidleitem ',''))
 			lst = []
 			boughtStuff = str(await db.view('idleBought')).split('\n')
 			for i in boughtStuff:
@@ -1350,7 +1349,7 @@ async def addidleitem(ctx, mssg=None):
 				else:
 					add = ''
 				lst.append(i + add)
-			await db.add(idleBought='\n'.join(lst))
+			await db.set(idleBought='\n'.join(lst))
 	else:
 		embed = discord.Embed(color=0xff0000,description='You are not my creator!\nOnly they can use this command!')
 		await ctx.send(embed=embed)
@@ -1421,7 +1420,8 @@ async def see_bans(ctx):
 		lst = await get_banned()
 		string = ''
 		for i in lst:
-			string += '\n' + i + str(client.get_user(int(i)))
+		  if i != '':
+		    string += '\n' + str(i) + ' (' + str(client.get_user(int(i))) + ')'
 		embed = discord.Embed(color=0x00ff00, description='```' + string + '```')
 		await ctx.send(embed=embed)
 
