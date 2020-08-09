@@ -9,7 +9,7 @@
 <h3>Leaderboard</h3>
 <div id="leaderboard">
 	<ol>
-		{% for i in range(length) %}
+		{% for i in range(len(players)) %}
 		{% if i == 0 %}
 		<li id="one"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
 		{% elif i == 1 %}

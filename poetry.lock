@@ -91,6 +91,18 @@ voice = ["PyNaCl (1.3.0)"]
 
 [[package]]
 category = "main"
+description = "Simple and easy-to-use python database"
+name = "easypydb"
+optional = false
+python-versions = "*"
+version = "0.1"
+
+[package.dependencies]
+requests = "*"
+s1db = "*"
+
+[[package]]
+category = "main"
 description = "A simple framework for building complex web applications."
 name = "flask"
 optional = false
@@ -107,58 +119,6 @@ itsdangerous = ">=0.24"
 dev = ["pytest", "coverage", "tox", "sphinx", "pallets-sphinx-themes", "sphinxcontrib-log-cabinet", "sphinx-issues"]
 docs = ["sphinx", "pallets-sphinx-themes", "sphinxcontrib-log-cabinet", "sphinx-issues"]
 dotenv = ["python-dotenv"]
-
-[[package]]
-category = "main"
-description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
-name = "h11"
-optional = false
-python-versions = "*"
-version = "0.8.1"
-
-[[package]]
-category = "main"
-description = "HTTP/2 State-Machine based protocol implementation"
-name = "h2"
-optional = false
-python-versions = "*"
-version = "3.2.0"
-
-[package.dependencies]
-hpack = ">=3.0,<4"
-hyperframe = ">=5.2.0,<6"
-
-[[package]]
-category = "main"
-description = "Pure-Python HPACK header compression"
-name = "hpack"
-optional = false
-python-versions = "*"
-version = "3.0.0"
-
-[[package]]
-category = "main"
-description = "The next generation HTTP client."
-name = "http3"
-optional = false
-python-versions = ">=3.6"
-version = "0.6.7"
-
-[package.dependencies]
-certifi = "*"
-chardet = ">=3.0.0,<4.0.0"
-h11 = ">=0.8.0,<0.9.0"
-h2 = ">=3.0.0,<4.0.0"
-idna = ">=2.0.0,<3.0.0"
-rfc3986 = ">=1.0.0,<2.0.0"
-
-[[package]]
-category = "main"
-description = "HTTP/2 framing layer for Python"
-name = "hyperframe"
-optional = false
-python-versions = "*"
-version = "5.2.0"
 
 [[package]]
 category = "main"
@@ -208,17 +168,6 @@ version = "4.7.6"
 
 [[package]]
 category = "main"
-description = "a client for replit db"
-name = "replitdb"
-optional = false
-python-versions = ">=3.6"
-version = "0.0.13.3"
-
-[package.dependencies]
-requests-async = "*"
-
-[[package]]
-category = "main"
 description = "Python HTTP for Humans."
 name = "requests"
 optional = false
@@ -237,26 +186,14 @@ socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7)", "win-inet-pton"]
 
 [[package]]
 category = "main"
-description = "async-await support for `requests`."
-name = "requests-async"
-optional = false
-python-versions = ">=3.6"
-version = "0.6.2"
-
-[package.dependencies]
-http3 = ">=0.6.0,<0.7.0"
-requests = ">=2.0.0,<3.0.0"
-
-[[package]]
-category = "main"
-description = "Validating URI References per RFC 3986"
-name = "rfc3986"
+description = "S1 API Library for Python"
+name = "s1db"
 optional = false
 python-versions = "*"
-version = "1.4.0"
+version = "1.0.3"
 
-[package.extras]
-idna2008 = ["idna"]
+[package.dependencies]
+requests = "*"
 
 [[package]]
 category = "main"
@@ -304,7 +241,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "17332c56805968f1ed8659a4124421be9c7a4dc2e733e44c81065213eb8661dd"
+content-hash = "fa3c71a55ab7adb7861c2ed676618fb554c7d1624feb2d43445600a20d8b6324"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -350,28 +287,12 @@ discord = [
     {file = "discord.py-1.3.4-py3-none-any.whl", hash = "sha256:8ef58d6fc1e66903bc00ae79c4c09a38aa71043e88a83da4d2e8b9b1c9f9b9e2"},
     {file = "discord.py-1.3.4.tar.gz", hash = "sha256:1b546a32c0cd83d949392a71e5b06e30e19d1067246e3826d32ae9b8b3d06c1e"},
 ]
+easypydb = [
+    {file = "easypydb-0.1.tar.gz", hash = "sha256:ad70eebfa81666719476286c116fc194c0560eef6aaeb44a913e75942f86bc5f"},
+]
 flask = [
     {file = "Flask-1.1.2-py2.py3-none-any.whl", hash = "sha256:8a4fdd8936eba2512e9c85df320a37e694c93945b33ef33c89946a340a238557"},
     {file = "Flask-1.1.2.tar.gz", hash = "sha256:4efa1ae2d7c9865af48986de8aeb8504bf32c7f3d6fdc9353d34b21f4b127060"},
-]
-h11 = [
-    {file = "h11-0.8.1-py2.py3-none-any.whl", hash = "sha256:f2b1ca39bfed357d1f19ac732913d5f9faa54a5062eca7d2ec3a916cfb7ae4c7"},
-    {file = "h11-0.8.1.tar.gz", hash = "sha256:acca6a44cb52a32ab442b1779adf0875c443c689e9e028f8d831a3769f9c5208"},
-]
-h2 = [
-    {file = "h2-3.2.0-py2.py3-none-any.whl", hash = "sha256:61e0f6601fa709f35cdb730863b4e5ec7ad449792add80d1410d4174ed139af5"},
-    {file = "h2-3.2.0.tar.gz", hash = "sha256:875f41ebd6f2c44781259005b157faed1a5031df3ae5aa7bcb4628a6c0782f14"},
-]
-hpack = [
-    {file = "hpack-3.0.0-py2.py3-none-any.whl", hash = "sha256:0edd79eda27a53ba5be2dfabf3b15780928a0dff6eb0c60a3d6767720e970c89"},
-    {file = "hpack-3.0.0.tar.gz", hash = "sha256:8eec9c1f4bfae3408a3f30500261f7e6a65912dc138526ea054f9ad98892e9d2"},
-]
-http3 = [
-    {file = "http3-0.6.7.tar.gz", hash = "sha256:dbf9beedc58d8bbcf6e681a9d63d9e7cd8da346e1ffb512e02e9bf097d91f0bf"},
-]
-hyperframe = [
-    {file = "hyperframe-5.2.0-py2.py3-none-any.whl", hash = "sha256:5187962cb16dcc078f23cb5a4b110098d546c3f41ff2d4038a9896893bbd0b40"},
-    {file = "hyperframe-5.2.0.tar.gz", hash = "sha256:a9f5c17f2cc3c719b917c4f33ed1c61bd1f8dfac4b1bd23b7c80b3400971b41f"},
 ]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
@@ -439,20 +360,13 @@ multidict = [
     {file = "multidict-4.7.6-cp38-cp38-win_amd64.whl", hash = "sha256:7388d2ef3c55a8ba80da62ecfafa06a1c097c18032a501ffd4cabbc52d7f2b19"},
     {file = "multidict-4.7.6.tar.gz", hash = "sha256:fbb77a75e529021e7c4a8d4e823d88ef4d23674a202be4f5addffc72cbb91430"},
 ]
-replitdb = [
-    {file = "replitdb-0.0.13.3-py3-none-any.whl", hash = "sha256:db052999b895be06495af0264b4d1778b5c8ba14c3171cceac41c70dcc1253bc"},
-    {file = "replitdb-0.0.13.3.tar.gz", hash = "sha256:39619cdfb790535d6f233fce63dfaa95352ab06c7ac3b43e4fc5c0ecb168245b"},
-]
 requests = [
     {file = "requests-2.24.0-py2.py3-none-any.whl", hash = "sha256:fe75cc94a9443b9246fc7049224f75604b113c36acb93f87b80ed42c44cbb898"},
     {file = "requests-2.24.0.tar.gz", hash = "sha256:b3559a131db72c33ee969480840fff4bb6dd111de7dd27c8ee1f820f4f00231b"},
 ]
-requests-async = [
-    {file = "requests-async-0.6.2.tar.gz", hash = "sha256:8f128b66dec2974aa263e24410914b1829d3e1506497364c2edfa10112f55e0b"},
-]
-rfc3986 = [
-    {file = "rfc3986-1.4.0-py2.py3-none-any.whl", hash = "sha256:af9147e9aceda37c91a05f4deb128d4b4b49d6b199775fd2d2927768abdc8f50"},
-    {file = "rfc3986-1.4.0.tar.gz", hash = "sha256:112398da31a3344dc25dbf477d8df6cb34f9278a94fee2625d89e4514be8bb9d"},
+s1db = [
+    {file = "s1db-1.0.3-py3-none-any.whl", hash = "sha256:eac85c5eba3a3ba2fa0409fef30b0615c16f7c11d9365640dc62b714e9514f92"},
+    {file = "s1db-1.0.3.tar.gz", hash = "sha256:f4a1bcb7135af13d4a6a7e8884b7dde03d2992a289120f423d7dcc6689b9e951"},
 ]
 urllib3 = [
     {file = "urllib3-1.25.10-py2.py3-none-any.whl", hash = "sha256:e7983572181f5e1522d9c98453462384ee92a0be7fac5f1413a1e35c56cc0461"},

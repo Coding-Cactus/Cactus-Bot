@@ -1,12 +1,17 @@
-import discord, os, server, math, time, requests, replitdb, asyncio, random, threading, sys
+import discord, os, time, math, threading, sys, asyncio, server
 from discord.ext import commands
+from easypydb import DB
 
+dbTOKEN = os.getenv('dbTOKEN')
+userDB = DB('userDB', dbTOKEN)
+generalDB = DB('generalDB', dbTOKEN)
+pfpDB = DB('pfpDB', dbTOKEN)
 
 client = discord.Client()
 
 client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=True)
 
-db = replitdb.AsyncClient()
+
 
 #-------------------------------------------------------
 #							Status/On Ready
@@ -20,19 +25,15 @@ async def on_ready():
 	print('In ' + str(len(client.guilds)) + ' servers')
 	for i in client.guilds:
 		print(i)
-	
-	
-	#print(await db.view('shop'))
-	#print(await db.view('score'))
-	#print(await db.view('growth'))
-	set_interval(perSec, 60)
-	set_interval2(updateUsers, 600)
 	global uptime
 	uptime = time.time()
+	set_interval(perMin, 60)
+	set_intervalPFPs(updatePFPs, 300)
 
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
+
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -44,6 +45,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
+
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -55,10 +57,9 @@ async def help(ctx, command=None):
 		embed.add_field(name='info', value='Info about the bot, also its invite link.', inline=False)
 		embed.add_field(name='prof', value='See your profile (stats).')
 		embed.add_field(name='grow', value='Grow and try to become a big cactus!')
-		embed.add_field(name='shop', value='Trade in some of your height for increases in height per growth.')
-		embed.add_field(name='buy', value='Buy an item from the shop\nIn the form: `=buy item`.')
-		embed.add_field(name='idle-shop', value='Trade in some of your height for increases in height per minute.')
-		embed.add_field(name='idle-buy', value='Buy an item from the idle shop\nIn the form: `=idle-buy item`.')
+		embed.add_field(name='shop', value='View the shop where you can trade in some of your height for increases in height per growth.')
+		embed.add_field(name='buy', value='Buy an item from the shops\nIn the form: `=buy item ammount`(amount is optional (write max if you you want the max)).')
+		embed.add_field(name='idle-shop', value='View the shop where you can trade in some of your height for increases in height per minute.')
 		embed.add_field(name='habitats', value='Look at the habitats that you could move to (habitats increase multiplier).')
 		embed.add_field(name='change-habitat', value='Move to a new habitat (increases multplier).')
 		embed.add_field(name='daily-reward', value='Collect your daily reward.')
@@ -67,755 +68,235 @@ async def help(ctx, command=None):
 		embed.add_field(name='bug', value='Report a bug (please be specific).')
 		embed.set_footer(text='Prefix is \'=\'')
 		await ctx.send(embed=embed)
-		
+
+
 #-------------------------------------------------------
 #						Functions
 #-------------------------------------------------------
+
+bold = lambda a: '**'+a+'**'
+
 def commas(i):
 	s,i="",str(i)
 	for x in range(len(i)//3):s=","+i[-3:]+s;i=i[:-3]
 	if i=="":s=s[1:]
 	return(i+s)
 
-def bold(i):
-	return '**'+i+'**'
-	
-def pfp(ID):
+async def send_embed(ctx, t, d, good):
+	if good:
+		colour = 0x00fff00
+	else:
+		colour = 0xff0000
+	embed = discord.Embed(
+		title=t,
+		description=d,
+		color=colour
+	)
+	await ctx.send(embed=embed)
+
+def userExists(user):
+	found = False
+	for i in userDB.data:
+		if user == i:
+			found = True
+			break
+	return found
+
+def addUser(user):
+	def newBought(shopType):
+		thing = []
+		for i in generalDB[shopType]:
+			thing.append(0)
+		return thing
+
+	userDB[user] = {
+		'score':0,
+		'hpg':2,
+		'hpm':0,
+		'multiplier':1,
+		'bought': newBought('shop'),
+		'idleBought': newBought('idleShop'),
+		'dailyTime':0,
+		'growTime':0,
+	}
+
+	new = pfpDB['stuff']
 	try:
-		user = client.get_user(int(ID))
-		if user.is_avatar_animated() != True:
+		user2 = client.get_user(int(user))
+		if user2.is_avatar_animated() != True:
 			format = "png"
 		else:
 			format = "gif"
-		return user.avatar_url_as(format = format)
+		pfp = user2.avatar_url_as(format = format)
 	except AttributeError:
-		return None
+		pfp = None
+	new[user] = {'name':str(client.get_user(int(user))), 'pfp':pfp}
+	pfpDB['stuff'] = new
 
-async def playerExist(user):
-	lst = []
-	exist = False
-	
-	f = str(await db.view('score')).split('\n')
-	for x in f:
-		lst.append(x.replace('\n',''))
-
-	for i in range(len(lst)):
-		if lst[i].split('=')[0] == user:
-			exist = True
-	return exist
-
-async def addUser(user):
-	await db.set(score=str(await db.view('score')) + '\n' + user + '=0')
-	await db.set(growth=str(await db.view('growth')) + '\n' + user + '=2')
-	await db.set(times=str(await db.view('times')) + '\n' + user + '=0')
-	await db.set(daily=str(await db.view('daily')) + '\n' + user + '=0')
-	await db.set(idle=str(await db.view('idle')) + '\n' + user + '=0')
-	await db.set(names=str(await db.view('names')) + '\n' + user + '=' + str(client.get_user(int(user))))
-	await db.set(pfps=str(await db.view('pfps')) + '\n' + user + '=' + str(pfp(user)))
-
-	lst = str(await db.view('shop')).split('\n')
-	new = '\n' + user + '='
-	for x in lst:
-		new += '1,'
-	new = new[:-1]
-	await db.set(bought=str(await db.view('bought')) + new)
-
-	lst2 = str(await db.view('idleShop')).split('\n')
-	new = '\n' + user + '='
-	for x in lst2:
-		new += '1,'
-	new = new[:-1]
-	await db.set(idleBought=str(await db.view('idleBought')) + new)
-
-	lst3 = str(await db.view('habitats')).split('\n')
-	new = '\n' + user + '=1,'
-	for x in lst3:
-		new += '0,'
-	new = new[:-3]
-	await db.set(habitatsBought=str(await db.view('habitatsBought')) + new)
-		
-		
-
-
-async def getScore(user):
-	lst = []
-	lst2 = []
-	f = str(await db.view('score')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	return lst[lst2.index(user)].split('=')[1]
-
-
-
-async def getGrowth(user):
-	lst = []
-	lst2 = []
-	f = str(await db.view('growth')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	return lst[lst2.index(user)].split('=')[1]
-
-
-
-async def getTime(user):
-	lst = []
-	lst2 = []
-	f = str(await db.view('times')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	return float(lst[lst2.index(user)].split('=')[1])
-
-
-
-async def updateScore(user, score):
-	lst = []
-	lst2 = []
-	f = str(await db.view('score')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(score)
-	
-	await db.set(score='\n'.join(lst))
-
-
-
-async def updateHPG(user, hpg):
-	lst = []
-	lst2 = []
-	f = str(await db.view('growth')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(hpg)
-	await db.set(growth='\n'.join(lst))
-
-
-async def getIdle(user):
-	lst = []
-	lst2 = []
-	f = str(await db.view('idle')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	return lst[lst2.index(user)].split('=')[1]
-
-
-async def updateIdle(user, score):
-	lst = []
-	lst2 = []
-	f = str(await db.view('idle')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(score)
-	
-	await db.set(idle='\n'.join(lst))
-
-
-async def updateBought(user, item):
-	amountBought = []
-	userIDs = []
-	items = []
-	f = str(await db.view('bought')).split('\n')
-	for i in f:
-		amountBought.append(i.replace('\n',''))
-		userIDs.append(i.split('=')[0].replace('\n',''))
-	f2 = str(await db.view('shop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-
-	itemNum = items.index(item)
-
-	newAmount = int(amountBought[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]) + 1
-	preAmount = amountBought[userIDs.index(user)].split('=')[1].split(',')[:items.index(item)]
-	postAmount = amountBought[userIDs.index(user)].split('=')[1].split(',')[items.index(item)+1:]
-
-	if itemNum == 0:
-		strPreAmount = '='
-		for q in preAmount:
-			strPreAmount += q.replace('\n', '') + ','
-		strPostAmount = ''
-		for w in postAmount:
-			strPostAmount += w.replace('\n', '') + ','
+def dailyCalc(now, last):
+	difference = now - last
+	difference2 = 3600*22 - difference
+	if difference >= 3600 * 22:
+		msg = 'Ready!'
 	else:
-		strPreAmount = ''
-		newAmount = ',' + str(newAmount)
-		for q in preAmount:
-			strPreAmount += q.replace('\n', '') + ','
-		strPostAmount = ''
-		for w in postAmount:
-			strPostAmount += ',' + w.replace('\n', '')
-		strPostAmount = strPostAmount[1:] + ','	
-	
-	strPreAmount = strPreAmount[:-1]
-	strPostAmount = strPostAmount[:-1]
-	comma = ','
-	if itemNum == len(amountBought[userIDs.index(user)].split('=')[1].split(',')) - 1:
-		comma = ''
+		hrs = str(round(difference2 // 3600))
+		mins = str(round((difference2 - int(hrs) * 3600) // 60))
+		secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
+		msg='Ready in: ' + bold(hrs) + 'hrs ' + bold(mins) + 'mins ' + bold(secs) + 'secs'
+	return msg
 
-	amountBought[userIDs.index(user)] =  amountBought[userIDs.index(user)].split('=')[0] + '=' + strPreAmount + str(newAmount) + comma + strPostAmount
-	await db.set(bought='\n'.join(amountBought))
-
-
-async def idleUpdateBought(user, item):
-	amountBought = []
-	userIDs = []
+def getShopPage(user, page, shopType):
+	if shopType == 'shop':
+		increase = 'hpg'
+	elif shopType == 'idleShop':
+		increase = 'hpm'
+	shop = generalDB[shopType]
+	msg = '\n```\n'
 	items = []
-	f = str(await db.view('idleBought')).split('\n')
-	for i in f:
-		amountBought.append(i.replace('\n',''))
-		userIDs.append(i.split('=')[0].replace('\n',''))
-	f2 = str(await db.view('idleShop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
+	incs = []
+	for a in shop:
+		incs.append(shop[a][increase])
+	incs.sort()
+	for p in incs:
+		for s in shop:
+			if shop[s][increase] == p:
+				items.append(s)
+				break
 
-	itemNum = items.index(item)
-
-	newAmount = int(amountBought[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]) + 1
-	preAmount = amountBought[userIDs.index(user)].split('=')[1].split(',')[:items.index(item)]
-	postAmount = amountBought[userIDs.index(user)].split('=')[1].split(',')[items.index(item)+1:]
-
-	if itemNum == 0:
-		strPreAmount = '='
-		for q in preAmount:
-			strPreAmount += q.replace('\n', '') + ','
-		strPostAmount = ''
-		for w in postAmount:
-			strPostAmount += w.replace('\n', '') + ','
+	numPages = math.ceil(len(shop) / 5)
+	if page < 1:
+		page = 1
+	if page < numPages:
+		items = items[(page-1)*5:page*5]
+	elif page == numPages:
+		items = items[(page-1)*5:]
 	else:
-		strPreAmount = ''
-		newAmount = ',' + str(newAmount)
-		for q in preAmount:
-			strPreAmount += q.replace('\n', '') + ','
-		strPostAmount = ''
-		for w in postAmount:
-			strPostAmount += ',' + w.replace('\n', '')
-		strPostAmount = strPostAmount[1:] + ','	
-	
-	strPreAmount = strPreAmount[:-1]
-	strPostAmount = strPostAmount[:-1]
-	comma = ','
-	if itemNum == len(amountBought[userIDs.index(user)].split('=')[1].split(',')) - 1:
-		comma = ''
-
-	amountBought[userIDs.index(user)] =  amountBought[userIDs.index(user)].split('=')[0] + '=' + strPreAmount + str(newAmount) + comma + strPostAmount
-	await db.set(idleBought='\n'.join(amountBought))
-
-
-
-async def updateTime(user):
-	lst = []
-	lst2 = []
-	f = str(await db.view('times')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	
-	lst[lst2.index(user)] = lst[lst2.index(user)].split('=')[0] + '=' + str(time.time())
-	await db.set(times='\n'.join(lst))
-
-
-
-def enoughMoney(score, price):
-	if int(score) >= int(price):
-		return True
+		items = ''
+	if items != '':
+		for i in items:
+			msg += '\n' + i.title() + '\nPrice: ' + commas(str(fullPrice(i, user, 1, shopType))) + ' cm\nIncrease in ' + increase + ': ' + commas(str(shop[i][increase])) + 'cm\n'
 	else:
-		return False
+		msg = "\n```Page '" + str(page) + "' not found."
+	return msg + '```'
 
-
-
-async def realItem(item):
-	real = False
-	items = []
-	f = str(await db.view('shop')).split('\n')
-	for i in f:
-		items.append(i.split('=')[0])
-	if item in items:
-		real = True	
-	return real
-
-async def idleRealItem(item):
-	real = False
-	items = []
-	f = str(await db.view('idleShop')).split('\n')
-	for i in f:
-		items.append(i.split('=')[0])
-	if item in items:
-		real = True	
-	return real
-
-
-async def getPrice(item, user):
-	items = []
-	userIDs = []
-	lst = []
-	prices = {}
-	f = str(await db.view('bought')).split('\n')
-	for q in f:
-		lst.append(q)
-		userIDs.append(q.split('=')[0])
-	f2 = str(await db.view('shop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-	return round(int(prices[item]) * 1.138 ** int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]))
-
-async def idleGetPrice(item, user):
-	items = []
-	userIDs = []
-	lst = []
-	prices = {}
-	f = str(await db.view('idleBought')).split('\n')
-	for q in f:
-		lst.append(q)
-		userIDs.append(q.split('=')[0])
-	f2 = str(await db.view('idleShop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-	return round(int(prices[item]) * 1.138 ** int(lst[userIDs.index(user)].split('=')[1].split(',')[items.index(item)]))
-
-
-async def getHPG(item):
-	hpg = {}
-	f = str(await db.view('shop')).split('\n')
-	for i in f:
-		hpg[i.split('=')[0]] = i.split('=')[1].split(',')[1]
-	return int(hpg[item])
-
-async def getIdleItem(item):
-	hpg = {}
-	f = str(await db.view('idleShop')).split('\n')
-	for i in f:
-		hpg[i.split('=')[0]] = i.split('=')[1].split(',')[1]
-	return int(hpg[item])
-
-
-
-async def idlePageItems(num, user):
-	items = []
-	amountBought = []
-	userIDs = []
-	prices = {}
-	hpg = {}
-	pages ={}
-	f = str(await db.view('idleBought')).split('\n')
-	for i in f:
-		amountBought.append(i.replace('\n',''))
-		userIDs.append(i.replace('\n','').split('=')[0])
-	f2 = str(await db.view('idleShop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-		hpg[i.split('=')[0]] = i.split('=')[1].split(',')[1]
-
-	
-	pageContent = []
-	for x in range(math.ceil(len(items)/4)):
-		for q in range(4):
-			if x*4+q < len(items):
-				item = items[x*4+q]
-				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * 1.138 ** int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q])))) + ' cm\nIncrease in cm per minute: ' + commas(hpg[item]) + '\n')
-		pages['page'+str(x+1)] = pageContent
-		pageContent = []
-
-	try:
-		return pages['page'+num]
-	except KeyError:
-		return ['Page \'' + num + '\' not found']
-
-
-
-async def pageItems(num, user):
-	items = []
-	amountBought = []
-	userIDs = []
-	prices = {}
-	hpg = {}
-	pages ={}
-	f = str(await db.view('bought')).split('\n')
-	for i in f:
-		amountBought.append(i.replace('\n',''))
-		userIDs.append(i.replace('\n','').split('=')[0])
-	f2 = str(await db.view('shop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-		prices[i.split('=')[0]] = i.split('=')[1].split(',')[0]
-		hpg[i.split('=')[0]] = i.split('=')[1].split(',')[1]
-
-	pageContent = []
-	for x in range(math.ceil(len(items)/4)):
-		for q in range(4):
-			if x*4+q < len(items):
-				item = items[x*4+q]
-				pageContent.append('\n' + item.title() + ':\nCost: ' + commas(str(round(int(prices[item]) * 1.138 ** int(amountBought[userIDs.index(user)].split('=')[1].split(',')[x*4+q])))) + ' cm\nIncrease in cm per growth: ' + commas(hpg[item]) + '\n')
-		pages['page'+str(x+1)] = pageContent
-		pageContent = []
-
-	try:
-		return pages['page'+num]
-	except KeyError:
-		return ['Page \'' + num + '\' not found']
-
-
-
-async def amountBought(user, item):
-	lst = []
-	items = []
-	f = str(await db.view('bought')).split('\n')
-	for i in f:
-		lst.append(i)
-	f2 = str(await db.view('shop')).split('\n')
-	for i in f2:
-		items.append(i.split('=')[0])
-	return int(lst.split('=')[1].split(',')[items.index(item)])
-
-
-
-async def getNumPages():
-	items = []
-	f = str(await db.view('shop')).split('\n')
-	for i in f:
-		items.append(i.replace('\n','').split('=')[0])	
-	return math.ceil(len(items)/4)
-
-async def idleGetNumPages():
-	items = []
-	f = str(await db.view('idleShop')).split('\n')
-	for i in f:
-		items.append(i.replace('\n','').split('=')[0])	
-	return math.ceil(len(items)/4)
-
-
-
-async def removeMessageFromFile(msgID):
-	lst = []
-	lst2 =[]
-	f = str(await db.view('messages')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(msgID)] = ''
-	string = ''
-	for x in range(len(lst)):
-		if lst[x].replace('\n','') != '':
-			string += '\n' + lst[x]
-	await db.set(messages='\n'.join(lst))
-
-async def idleRemoveMessageFromFile(msgID):
-	lst = []
-	lst2 =[]
-	f = str(await db.view('idleMessages')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(msgID)] = ''
-	string = ''
-	for x in range(len(lst)):
-		if lst[x].replace('\n','') != '':
-			string += '\n' + lst[x]
-	await db.set(idleMessages='\n'.join(lst))
-
-async def leadRemoveMessageFromFile(msgID):
-	lst = []
-	lst2 =[]
-	f = str(await db.view('leadMessages')).split('\n')
-	for i in f:
-		lst.append(i.replace('\n',''))
-		lst2.append(i.replace('\n','').split('=')[0])
-	lst[lst2.index(msgID)] = ''
-	string = ''
-	for x in range(len(lst)):
-		if lst[x].replace('\n','') != '':
-			string += '\n' + lst[x]
-	await db.set(leadMessages='\n'.join(lst))
-
-def realNum(num):
-	try:
-		if int(num) >= 0:
-			return True
+def fullPrice(item, user, num, shopType):
+	if shopType == 'shop':
+		bought = 'bought'
+	elif shopType == 'idleShop':
+		bought = 'idleBought'
+	index = 0
+	for i in generalDB[shopType]:
+		if i == item:
+			break
 		else:
-			return False
-	except ValueError:
-		return False
-
-
-
-async def getDailyTime(user):
-	lst = str(await db.view('daily')).split('\n')
-	for i in lst:
-		if i.split('=')[0] == user:
-			return float(i.split('=')[1])
-
-
-
-async def updateDailyTime(user):
-	lst = str(await db.view('daily')).split('\n')
-	for i in range(len(lst)):
-		if lst[i].split('=')[0] == user:
-			index = i
-	lst[index] = lst[index].split('=')[0] + '=' + str(time.time())
-	await db.set(daily='\n'.join(lst))
-
-
-async def resetBought(user):
-	lst = []
-	boughtStuff = str(await db.view('bought')).split('\n')
-	for i in boughtStuff:
-		if i.split('=')[0] != user:
-			lst.append(i)
-	await db.set(bought='\n' + '\n'.join(lst))
-	lst2 = str(await db.view('shop')).split('\n')
-	new = '\n' + user + '='
-	for x in lst2:
-		new += '1,'
-	new = new[:-1]
-	await db.set(bought=str(await db.view('bought')) + new)
-
-async def idleResetBought(user):
-	lst = []
-	boughtStuff = str(await db.view('idleBought')).split('\n')
-	for i in boughtStuff:
-		if i.split('=')[0] != user:
-			lst.append(i)
-	await db.set(idleBought='\n' + '\n'.join(lst))
-	lst2 = str(await db.view('idleShop')).split('\n')
-	new = '\n' + user + '='
-	for x in lst2:
-		new += '1,'
-	new = new[:-1]
-	await db.set(idleBought=str(await db.view('idleBought')) + new)
-
-async def getHabitats():
-	f = str(await db.view('habitats')).split('\n')
-	lst = []
-	for i in f:
-		lst.append(i.split('=')[0])
-	return lst
-
-async def getHabitatsBought(user):
-	f = str(await db.view('habitatsBought')).split('\n')
-	for i in f:
-		if i.split('=')[0] == user:
-			return i.split('=')[1].split(',')
-
-async def getHabitatPrice(item):
-	f = str(await db.view('habitats')).split('\n')
-	for i in f:
-		if i.split('=')[0] == item:
-			return i.split('=')[1].split(',')[0]
-
-async def getHabitatMultiplier(item):	
-	f = str(await db.view('habitats')).split('\n')
-	for i in f:
-		if i.split('=')[0] == item:
-			return i.split('=')[1].split(',')[1]
-
-
-async def updateHabitatBought(user, item):
-	f = str(await db.view('habitatsBought')).split('\n')
-	f2 = str(await db.view('habitats')).split('\n')
-	f3 = []
-	for x in f2:
-		f3.append(x.split('=')[0])
-	lst = []
-	index = f3.index(item)
-	for i in f:
-		if i.split('=')[0] == user:
-			lst.append(i.split('=')[0] + '=' + '2,' * len(i.split('=')[1].split(',')[:index]) + '1' + ',0' * len(i.split('=')[1].split(',')[index+1:]))
-		else:
-			lst.append(i)
-	await db.set(habitatsBought='\n'.join(lst))
-
-async def getMultplier(user):
-	f = str(await db.view('habitatsBought')).split('\n')
-	f2 = []
-	f3 = []
-	h = str(await db.view('habitats')).split('\n')
-	h2 = []
-	for x in f:
-		if x != '':
-			f2.append(x.split('=')[1])
-			f3.append(x.split('=')[0])
-	for i in h:
-		h2.append(i.split('=')[1].split(',')[1])
-	f4 = f2[f3.index(user)].split(',')
-	return h2[f4.index('1')]
-
-
-async def resetHabitat(user):
-	f = str(await db.view('habitatsBought')).split('\n')
-	f2 = str(await db.view('habitats')).split('\n')
-	lst = []
-	extra = ''
-	for x in range(len(f2)-1):
-		extra += ',0'
-	for i in f:
-		if i.split('=')[0] == user:
-			lst.append(i.split('=')[0] + '=1' + extra)
-		else:
-			lst.append(i)
-	await db.set(habitatsBought='\n' + '\n'.join(lst))
-
-
-async def getLeadersLen():
+			index += 1
 	total = 0
-	f = str(await db.view('score')).split('\n')
-	for i in f:
-		if i != '':
-			total += 1
-	return math.ceil(total/10)
+	for n in range(0,num):
+		total += round(generalDB[shopType][item]['price'] * 1.138 ** (userDB[user][bought][index] + n))
+	return total
+
+def findMax(item, user, shopType):
+	loops = 0
+	score = userDB[user]['score']
+	price = generalDB[shopType][item]['price']
+	if shopType == 'shop':
+		bought = 'bought'
+	elif shopType == 'idleShop':
+		bought = 'idleBought'
+	boughtLst = userDB[user][bought]
+	index = 0
+	for i in generalDB[shopType]:
+		if i == item:
+			break
+		else:
+			index += 1
+	startBought = boughtLst[index]
+	total = round(price * 1.138 ** startBought)
+	while score >= total:
+		loops += 1
+		total += round(price * 1.138 ** (startBought + loops))
+	return loops
 
 
-async def shopPage(page, userID):
-	items = await pageItems(page, userID)
-	description = 'Your Height: ' + await getScore(userID) + ' cm\n'
-	description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
-	
-	for i in items:
-		description += i
-	description += '```'
+def showHabitats(user):
+	multiplier = userDB[user]['multiplier']
+	habitats = generalDB['habitats']
+	desc = '\n```\n'
+	for i in habitats:
+		desc += '\n' + i.title() + '\nPrice: '
+		mult = habitats[i]['multiplier']
+		if mult < multiplier:
+			desc += "You can't go back here"
+		elif mult == multiplier:
+			desc += "Current Location"
+		else:
+			desc += commas(str(habitats[i]['price'])) + ' cm'
+		desc += '\nMultiplier: ' + str(mult) + 'x\n'
+	return desc + '```'
 
-	embed = discord.Embed(title='Shop (' + str(client.get_user(int(userID))) + ')', color=0x00ff00, description=description)
-	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-	return embed
-
-
-async def idleShopPage(page, userID):
-	items = await idlePageItems(page, userID)
-	description = 'Your Height: ' + bold(commas(await getScore(userID))) + ' cm\n'
-	description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'					
-	for i in items:
-		description += i
-	description += '```'
-	embed = discord.Embed(title='Idle Shop (' + str(client.get_user(int(userID))) + ')', color=0x00ff00, description=description)
-	embed.set_footer(text='You can do \'=idle-shop [pageNum]\' to go straight to a certain page.')
-	return embed
-
-
-async def showLeaderboard(page):
+def showLeaderboard(page):
 	scores = []
-	players = []
-	orderedScores = []
-	f = str(await db.view('score')).split('\n')
-	for i in f:
-		if i.replace('\n','') != '' and i.replace('\n','').split('=')[0] != '691576874261807134':
-			scores.append(int(i.replace('\n','').split('=')[1]))
-			orderedScores.append(int(i.replace('\n','').split('=')[1]))
-			players.append(int(i.replace('\n','').split('=')[0]))
-	orderedScores.sort(reverse=True)
-	orderedPlayers = []
-	for x in orderedScores:
-		orderedPlayers.append(players[scores.index(x)])
-		scores[scores.index(x)] = ''
-	description = 'Page ' + str(page) + '/' + str(await getLeadersLen()) + '```'
-	loops = 10 * page
-	start = (page-1)*10
-	if start <= len(orderedPlayers):
-		if len(scores) < loops:
-			loops = len(scores)
-		for a in range(start, loops):
-			description += str(a+1) + '. ' + str(client.get_user(orderedPlayers[a])) + ': ' + commas(str(orderedScores[a])) + 'cm\n'
-	else:
-		description += 'No more users :('
-	return discord.Embed(color=0x00ff00,title='Leaderboard', description=description+'```')
-	
-
-async def changePage(fName, reaction, user):
-	messages = []
-	pages = []
 	users = []
-	page = 0
-	doStuff = False
-	f = str(await db.view(fName)).split('\n')	
-	for i in f:
-		if i.replace('\n','') != '':
-			messages.append(i.replace('\n','').split('=')[0])
-			pages.append(i.replace('\n','').split('=')[1].split(',')[0])
-			users.append(i.replace('\n','').split('=')[1].split(',')[1])
-		msgID = str(reaction.message.id)
-	if msgID in messages:
-		index = messages.index(msgID)
-		if fName == 'messages':
-			numPages = await getNumPages()
-		elif fName == 'idleMessages':
-			numPages = await idleGetNumPages()
-		elif fName == 'leadMessages':
-			numPages = await getLeadersLen()
-		if str(user.id) == users[index]:
-			if str(reaction) in ['⬅️','➡️']:
-				doStuff = False
-				if str(reaction) == '⬅️' and int(pages[index]) > 1:
-					page = str(int(pages[index]) - 1)
-					doStuff = True
-				
-				elif str(reaction) == '➡️' and int(pages[index]) < numPages:
-					page = str(int(pages[index]) + 1)
-					doStuff = True
-	return [doStuff, page, msgID]
+	for i in userDB.data:
+		if i != '691576874261807134':
+			scores.append(userDB[i]['score'])
+	scores.sort(reverse=True)
+	for s in scores:
+		for u in userDB.data:
+			if userDB[u]['score'] == s and u not in users:
+				users.append(u)
+				break
+	start = (page - 1) * 10
+	end = page * 10
+	scores = scores[start:end]
+	desc ='\n```\n'
+	for x in range(len(scores)):
+		desc += str(x + 1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + ' cm\n'
+	return desc + '```'
 
 
-async def db_ban(user):
-	lst = str(await db.view('banned')).split('\n')
-	lst.append(user)
-	await db.set(banned='\n'.join(lst))
-
-async def get_banned():
-	return str(await db.view('banned')).split('\n')
-
-async def db_unban(user):
-	lst = str(await db.view('banned')).split('\n')
-	lst2 = []
-	for i in lst:
-		if i != user:
-			lst2.append(i)
-	await db.set(banned='\n'.join(lst2))
-
-async def perSec():
-	stuff = str(await db.view('idle')).split('\n')
-	change = []
-	userIds = []
-	for i in stuff:
-		if i != '' and i.split('=')[1] != '0':
-			change.append(i.split('=')[1])
-			userIds.append(i.split('=')[0])
-	for i in userIds:
-		multiplier = int(await getMultplier(i))
-		await updateScore(i, int(await getScore(i)) + (int(change[userIds.index(i)]) * multiplier))
+def perMin():
+	for i in userDB.data:
+		stats = userDB[i]
+		increase = userDB[i]['hpm']
+		stats['score'] += increase * stats['multiplier']
+		userDB[i] = stats
 
 def set_interval(func, sec):
 	def func_wrapper():
-		set_interval(perSec, 60)
-		asyncio.run(perSec())
+		set_interval(func, sec)
+		perMin()
 	t = threading.Timer(sec, func_wrapper)
 	t.start()
 	return t
-	
-async def updateUsers():
-	names = []
-	pfps = []
-	for x in str(await db.view("score")).split("\n"):
-		if x != '':
-			names.append(x.split("=")[0] + "=" + str(client.get_user(int(x.split("=")[0]))))
-			pfps.append(x.split('=')[0] + '=' + str(pfp(x.split('=')[0])))
-	await db.set(names="\n".join(names))
-	await db.set(pfps="\n".join(pfps))
-	
-def set_interval2(func, sec):
-	def func_wrapper2():
-		set_interval2(updateUsers, 600)
-		asyncio.run(updateUsers())
-	t = threading.Timer(sec, func_wrapper2)
+
+def updatePFPs():
+	for i in userDB.data:
+		new = pfpDB['stuff']
+		try:
+			user = client.get_user(int(i))
+			if user.is_avatar_animated() != True:
+				format = "png"
+			else:
+				format = "gif"
+			pfp = str(user.avatar_url_as(format = format))
+		except AttributeError:
+			pfp = None
+		new[i] = {'name':str(client.get_user(int(i))), 'pfp':pfp}
+		pfpDB['stuff'] = new
+
+def set_intervalPFPs(func, sec):
+	def func_wrapperPFPs():
+		set_interval(func, sec)
+		updatePFPs()
+	t = threading.Timer(sec, func_wrapperPFPs)
 	t.start()
 	return t
 
 #-------------------------------------------------------
 #						Commands
 #-------------------------------------------------------
+
 @client.command(aliases=['info','uptime','source','source-code','prefix'])
 async def invite(ctx):
 	now = time.time()
@@ -824,17 +305,19 @@ async def invite(ctx):
 	mins = str(round((diff - int(hrs) * 3600) // 60))
 	secs = str(round(diff - int(hrs) *3600 - int(mins) * 60))
 	timestr = bold(hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
-	embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://repl.it/@CodingCactus/Cactus-Bot-2\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
+	embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://repl.it/@CodingCactus/Cactus-Bot\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
 	await ctx.send(embed=embed)
 
-@client.command()
+@client.command(aliases=['users'])
 async def servers(ctx):
 	total = 0
+	users = 0
 	for i in client.guilds:
 		total += len(i.members)
-	embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)))
+	for i in userDB.data:
+		users += 1
+	embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)) + '\nTotal Users: ' + bold(str(users)))
 	await ctx.send(embed=embed)
-
 
 @client.command()
 async def lines(ctx):
@@ -843,337 +326,10 @@ async def lines(ctx):
 	for x in files:
 		with open(x) as txt:
 			lines=txt.read().splitlines()
-		numLines += len(lines)-lines.count("")
-	
+			numLines += len(lines)-lines.count("")
 	embed = discord.Embed(color=0x00ff00, description='Total number of lines of code to make me: ' + str(numLines))
 	await ctx.send(embed=embed)
 
-
-
-@client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
-async def prof(ctx, *, member: discord.Member=None):
-	if member == None:
-		user = str(ctx.message.author.id)
-	else:
-		user = str(member.id)
-	exist = await playerExist(user)
-	if exist:
-		growth = await getGrowth(user)
-		score = await getScore(user)
-		idle = await getIdle(user)
-		dailyTime = await getDailyTime(user)
-		multiplier = await getMultplier(user)
-		timeNow = time.time()
-		difference = timeNow - dailyTime
-		difference2 = 3600*22 - difference
-		if difference >= 3600 * 22:
-			msg = 'Ready!'
-		else:
-			hrs = str(round(difference2 // 3600))
-			mins = str(round((difference2 - int(hrs) * 3600) // 60))
-			secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
-			msg='Ready in: ' + bold(hrs) + 'hrs ' + bold(mins) + 'mins ' + bold(secs) + 'secs'
-
-
-		embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))) + '\'s Profile', description='Height (cm): ' + bold(commas(score)) + '\ncm per growth: ' + bold(commas(growth)) + '\ncm per minute: ' + bold(commas(idle)) + '\nMultiplier: ' + bold(multiplier + 'x') + '\n\nDaily Reward Status:\n' + msg)
-		await ctx.send(embed=embed)
-	else:
-		embed = discord.Embed(color=0xff0000, description='You haven\'t played yet!')
-		await ctx.send(embed=embed)
-
-
-@client.command()
-async def grow(ctx):
-	user = str(ctx.author.id)
-	cooldown= int(await db.view('cooldown'))
-	allow = False
-	timeNow = time.time()
-	if not await playerExist(user):
-		await addUser(user)
-		allow = True	
-	userTime = await getTime(user)
-	if round(timeNow - userTime) >= cooldown:
-		allow = True
-
-	if allow:
-	
-		growth = int(await getGrowth(user))
-		score = int(await getScore(user))
-		multiplier = int(await getMultplier(user))
-		newScore = score + (growth * multiplier)
-
-		embed = discord.Embed(color=0x00ff00, description='You grew ' + bold(commas(str(growth * multiplier))) + ' cm!\nYou are now ' + bold(commas(str(newScore))) + ' cm tall!')
-		await ctx.send(embed=embed)		
-		await updateScore(user, newScore)
-		await updateTime(user)
-	else:
-		if cooldown - round(timeNow - userTime) == 1:
-			s = ''
-		else:
-			s = 's'
-		embed = discord.Embed(color=0xff0000, description='You are still tired from the last time that you grew.\nPlease wait **' + str(cooldown - round(timeNow - userTime)) + '** second' + s + '.')
-		await ctx.send(embed=embed)
-
-@client.command()
-async def shop(ctx, mssg=None):
-	user = str(ctx.message.author.id)
-	if not await playerExist(user):
-		await addUser(user)
-
-	if mssg == None:
-		page = '1'
-	else:
-		page = mssg
-
-	items = await pageItems(page, user)
-	description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
-	description += 'Page ' + page + '/' + str(await getNumPages()) + '\n```'
-	
-	for i in items:
-		description += i
-	description += '```'
-
-	embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
-	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-	msg = await ctx.send(embed=embed)
-
-	await msg.add_reaction('⬅️')
-	await msg.add_reaction('➡️')
-
-	await db.set(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
-
-	lst = str(await db.view('messages')).split('\n')
-	lst2 = []
-	if len(lst) >= 75:
-		for l in lst:
-			if l != '':
-				lst2.append(l)
-		await db.set(messages='\n' + '\n'.join(lst2[32:]))
-
-
-
-@client.command(aliases=['ishop','i-shop','idle-shop'])
-async def idle_shop(ctx, mssg=None):
-	user = str(ctx.message.author.id)
-	if not await playerExist(user):
-		await addUser(user)
-
-	if mssg == None:
-		page = '1'
-	else:
-		page = mssg
-
-	items = await idlePageItems(page, user)
-	description = 'Your Height: ' + bold(commas(await getScore(user))) + ' cm\n'
-	description += 'Page ' + page + '/' + str(await idleGetNumPages()) + '\n```'
-	
-	for i in items:
-		description += i
-	description += '```'
-
-	embed = discord.Embed(title='Shop (' + str(client.get_user(int(user))) + ')', color=0x00ff00, description=description)
-	embed.set_footer(text='You can do \'=shop [pageNum]\' to go straight to a certain page.')
-	msg = await ctx.send(embed=embed)
-
-	await msg.add_reaction('⬅️')
-	await msg.add_reaction('➡️')
-
-	await db.set(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + user)
-
-	lst = str(await db.view('idleMessages')).split('\n')
-	lst2 = []
-	if len(lst) >= 75:
-		for l in lst:
-			if l != '':
-				lst2.append(l)
-		await db.set(idleMessages='\n' + '\n'.join(lst2[32:]))
-
-
-@client.command()
-async def buy(ctx,*, mssg=None):
-	user = str(ctx.message.author.id)
-	if not await playerExist(user):
-		await addUser(user)
-
-	if mssg == None:
-		embed = discord.Embed(color=0xff0000, description='Please enter in the form `=buy item`')
-		await ctx.send(embed=embed)
-	else:
-		item = mssg.lower()
-		
-
-		if await realItem(item):
-			score = await getScore(user)
-			hpg = await getGrowth(user)
-			price = await getPrice(item, user)
-
-			if enoughMoney(int(score), price):
-				multiplier = int(await getMultplier(user))
-				await updateHPG(user, int(hpg)+await getHPG(item))
-
-				embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getGrowth(user)) * multiplier))) + ' cm per growth!')
-				await ctx.send(embed=embed)
-
-				await updateBought(user, item)
-				await updateScore(user, int(score)-price)
-			else:
-				embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
-				await ctx.send(embed=embed)
-			
-		else:
-			embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
-			await ctx.send(embed=embed)
-
-
-@client.command(aliases=['ibuy', 'idle-buy'])
-async def idle_buy(ctx,*, mssg=None):
-	user = str(ctx.message.author.id)
-	if not await playerExist(user):
-		await addUser(user)
-
-	if mssg == None:
-		embed = discord.Embed(color=0xff0000, description='Please enter in the form `=idle-buy item`')
-		await ctx.send(embed=embed)
-	else:
-		item = mssg.lower()
-		
-
-		if await idleRealItem(item):
-			score = await getScore(user)
-			idle = await getIdle(user)
-			price = await idleGetPrice(item, user)
-
-			if enoughMoney(int(score), price):
-				multiplier = int(await getMultplier(user))				
-				await updateIdle(user, int(idle) + await getIdleItem(item))
-
-				embed = discord.Embed(color=0x00ff00, title='Bought successfully!', description='You now grow ' + bold(commas(str(int(await getIdle(user)) * multiplier))) + ' cm per minute!')
-				await ctx.send(embed=embed)
-				await idleUpdateBought(user, item)
-				await updateScore(user, int(score)-price)
-			else:
-				embed = discord.Embed(color=0xff0000, description='You need to be ' + bold(commas(str(price - int(score)))) + ' cm taller to buy that!')
-				await ctx.send(embed=embed)
-			
-		else:
-			embed = discord.Embed(color=0xff0000, description='Unkown item: \''+item+'\'')
-			await ctx.send(embed=embed)
-
-
-@client.event
-async def on_reaction_add(reaction, user):
-	lst = await changePage('messages', reaction, user)
-	doStuff = lst[0]
-	page = lst[1]
-	msgID = lst[2]
-	if doStuff:
-		embed = await shopPage(page, str(user.id))					
-		msg = await reaction.message.channel.send(embed=embed)
-		await removeMessageFromFile(msgID)
-		await reaction.message.delete()
-		await msg.add_reaction('⬅️')
-		await msg.add_reaction('➡️')
-		await db.set(messages=str(await db.view('messages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
-
-	lst = await changePage('idleMessages', reaction, user)
-	doStuff = lst[0]
-	page = lst[1]
-	msgID = lst[2]
-	if doStuff:
-		embed = await idleShopPage(page, str(user.id))
-		msg = await reaction.message.channel.send(embed=embed)
-		await idleRemoveMessageFromFile(msgID)
-		await reaction.message.delete()
-		await msg.add_reaction('⬅️')
-		await msg.add_reaction('➡️')
-		await db.set(idleMessages=str(await db.view('idleMessages')) + '\n' + str(msg.id) + '=' + page + ',' + str(user.id))
-
-	lst = await changePage('leadMessages', reaction, user)
-	doStuff = lst[0]
-	page = int(lst[1])
-	msgID = lst[2]
-	if doStuff:
-		embed = await showLeaderboard(page)
-		msg = await reaction.message.channel.send(embed=embed)
-		await leadRemoveMessageFromFile(msgID)
-		await reaction.message.delete()
-		await msg.add_reaction('⬅️')
-		await msg.add_reaction('➡️')
-		await db.set(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + str(user.id))
-
-
-@client.command(aliases=['habitat'])
-async def habitats(ctx):
-	user = str(ctx.author.id)
-	if not await playerExist(user):
-		addUser(user)
-
-	f = str(await db.view('habitats')).split('\n')
-	f2 = str(await db.view('habitatsBought')).split('\n')
-	places = []
-	prices = []
-	multipliers =[]
-	for x in f2:
-		if x.split('=')[0] == user:
-			bought = x.split('=')[1].split(',')
-	for i in range(len(f)):
-		if bought[i] == '1':
-				prices.append('Current Location')
-		elif bought[i] == '2':			
-				prices.append('Cannot go back here')
-		else:
-			prices.append(commas(f[i].split('=')[1].split(',')[0]) + ' cm')
-		places.append(f[i].split('=')[0])
-		multipliers.append(f[i].split('=')[1].split(',')[1])
-	message = '```'
-	for x in range(len(places)):
-		message += '\n' + places[x].title().replace("'S","'s") + ':\nPrice: ' + prices[x] + '\nMultiplier: ' + multipliers[x] + '\n'
-	message += '```'
-	embed = discord.Embed(color=0x00ff00,title=str(client.get_user(int(user))),description='Your height: ' + bold(commas(await getScore(user))) + ' cm\n' + message)
-	await ctx.send(embed=embed)
-
-
-@client.command(aliases=['change-habitat'])
-async def change_habitat(ctx, mssg=None):
-	user = str(ctx.author.id)
-	if mssg != None:
-		if not await playerExist(user):
-			await addUser(user)
-
-		choice = ctx.message.content.lower().replace('=change-habitat ','')
-		habitats = await getHabitats()
-		if choice in habitats:
-			bought = await getHabitatsBought(user)
-			if bought[habitats.index(choice)] != '1':
-				if bought[habitats.index(choice)] != '2':
-					score = await getScore(user)
-					price = await getHabitatPrice(choice)
-					if enoughMoney(score, price):
-						multiplier = await getHabitatMultiplier(choice)
-						embed = discord.Embed(color=0x00ff00,description='Congratulations! You now live in a ' + choice.title() + '!\nYour multiplier is now ' + bold(multiplier))
-						await ctx.send(embed=embed)
-						await updateScore(user, str(int(score) - int(price)))
-						await updateHabitatBought(user, choice)
-					else:
-						embed = discord.Embed(color=0xff0000,description='You aren\'t tall enough for that!')
-						await ctx.send(embed=embed)
-				else:
-					embed = discord.Embed(color=0xff0000,description='You have already lived there, you can\'t go back!')
-					await ctx.send(embed=embed)
-			else:
-				embed = discord.Embed(color=0xff0000,description='You are already there!')
-				await ctx.send(embed=embed)
-					
-		else:
-			embed = discord.Embed(color=0xff0000,description='Unkown habitat \'' + choice +'\'')
-			await ctx.send(embed=embed)
-
-	else:
-		embed = discord.Embed(color=0xff0000,description='You didn\'t enter anything.')
-		await ctx.send(embed=embed)
-
-
-					
 @client.command(aliases=['leaders', 'ranks', 'ranking'])
 async def leaderboard(ctx, mssg=None):
 	user = str(ctx.author.id)
@@ -1184,261 +340,572 @@ async def leaderboard(ctx, mssg=None):
 			page = int(mssg)
 		except ValueError:
 			page = 1
-	embed = await showLeaderboard(page)
-	msg = await ctx.send(embed=embed)
+	desc = showLeaderboard(page)
+	sent = await ctx.send(
+		embed=discord.Embed(
+			title='leaderboard',
+			description='Page: ' + str(page) + desc,
+			color=0x00ff00
+		)
+	)
+	await sent.add_reaction('⬅️')
+	await sent.add_reaction('➡️')
+	msgs = generalDB['leadMessages']
+	msgs[str(sent.id)] = {'user':user,'page':page}
+	generalDB['leadMessages'] = msgs
 
-	await msg.add_reaction('⬅️')
-	await msg.add_reaction('➡️')
 
-	await db.set(leadMessages=str(await db.view('leadMessages')) + '\n' + str(msg.id) + '=' + str(page) + ',' + user)
+@client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
+async def prof(ctx, *, member: discord.Member=None):
+	if member == None:
+		name = str(ctx.author)
+		user = str(ctx.author.id)
+	else:
+		name = str(member)
+		user = str(member.id)
+	if userExists(user):
+		stats = userDB[user]
+		desc = 'Height: ' + bold(commas(str(stats['score'])) + ' cm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg'])) + ' cm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']) )+ ' cm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaiy Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
+		await send_embed(
+			ctx,
+			name + "'s profile",
+			desc,
+			True
+		)
+	else:
+		await send_embed(
+			ctx,
+			None,
+			'User has never played :(',
+			False
+		)
 
 
-@client.command(aliases=['daily-reward','daily_reward', 'daily'])
-async def dailyreward(ctx):
-	user = str(ctx.message.author.id)
-	if not await playerExist(user):
-		await addUser(user)
 
-	dailyTime = await getDailyTime(user)
+
+
+@client.command()
+async def grow(ctx):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+
+	userStats = userDB[user]
 	timeNow = time.time()
-	difference = timeNow - dailyTime
-	difference2 = 3600*22 - difference
-	if difference >= 3600 * 22:
-		multiplier = int(await getMultplier(user))
-		reward = int(await getGrowth(user)) * multiplier * 50
-		embed = discord.Embed(color=0x00ff00,description='Here is your daily reward:\n' + str(reward) + ' cm!')
-		await ctx.send(embed=embed)
-		await updateScore(user, str(int(await getScore(user)) + reward))
-		await updateDailyTime(user)
+	if timeNow - userStats['growTime'] >= generalDB['cooldown']:
+		await send_embed(
+			ctx,
+			'GROW!',
+			'You grew ' + bold(commas(str(userStats['hpg']*userStats['multiplier'])) + ' cm') + '\nYou are now ' + bold(commas(str(userStats['score'] + userStats['hpg'] * userStats['multiplier'])) + ' cm') + '!',
+			True
+		)
+		userStats['score'] += userStats['hpg'] * userStats['multiplier']
+		userStats['growTime'] = timeNow
+		userDB[user] = userStats
 	else:
-		hrs = str(round(difference2 // 3600))
-		mins = str(round((difference2 - int(hrs) * 3600) // 60))
-		secs = str(round(difference2 - int(hrs) *3600 - int(mins) * 60))
-		embed = discord.Embed(color=0xff0000,description='Your daily gift isn\'t ready yet!\nIt will be ready in ' + hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
-		await ctx.send(embed=embed)
+		await send_embed(
+			ctx,
+			'Too tired :(',
+			'You are too tired from the last time you grew.\nYou will be ready again in ' + bold(str(math.ceil(generalDB['cooldown'] - (timeNow - userStats['growTime']))) + ' second(s).'),
+			False
+		)
 
 
 
-@client.command(aliases=['bugs','report','bug_report','bug-report'])
-async def bug(ctx, *, mssg=None):
-	user2 = str(ctx.author)
-	if mssg==None:
-		embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
-		await ctx.send(embed=embed)
+
+
+@client.command(aliases=['store'])
+async def shop(ctx, mssg=None):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	if mssg == None:
+		page = 1
 	else:
-		if len(mssg) < 1900:
-			channel = client.get_channel(727123726990049291)
-			location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
-			footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
-			embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
-			embed.set_footer(text=footer)
-			await channel.send(embed=embed)
-			embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for reporting!')
-			await ctx.send(embed=embed2)
+		try:
+			page = int(mssg)
+		except ValueError:
+			page = 1
+	desc = getShopPage(user, page, 'shop')
+	embed = discord.Embed(
+		title='Shop (' + str(client.get_user(int(user))) + ')',
+		description='Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + '\nPage: ' + str(page)  + '/' + str(math.ceil(len(generalDB['shop']) / 5)) + desc,
+		color=0x00ff00
+	)
+	sent = await ctx.send(embed=embed)
+	await sent.add_reaction('⬅️')
+	await sent.add_reaction('➡️')
+	msgs = generalDB['shopMessages']
+	msgs[str(sent.id)] = {'user':user,'page':page}
+	generalDB['shopMessages'] = msgs
+
+
+
+
+
+@client.command(aliases=['ishop', 'idle-shop', 'i-shop'])
+async def idle_shop(ctx, mssg=None):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	if mssg == None:
+		page = 1
+	else:
+		try:
+			page = int(mssg)
+		except ValueError:
+			page = 1
+	desc = getShopPage(user, page, 'idleShop')
+	embed = discord.Embed(
+		title='Shop (' + str(client.get_user(int(user))) + ')',
+		description='Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB['idleShop']) / 5)) + desc,
+		color=0x00ff00
+	)
+	sent = await ctx.send(embed=embed)
+	await sent.add_reaction('⬅️')
+	await sent.add_reaction('➡️')
+	msgs = generalDB['idleShopMessages']
+	msgs[str(sent.id)] = {'user':user,'page':page}
+	generalDB['idleShopMessages'] = msgs
+
+
+
+
+
+@client.command(aliases=['ibuy', 'i-buy', 'idle-buy', 'purchase'])
+async def buy(ctx, *, mssg=None):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	if mssg == None:
+		await send_embed(
+			ctx,
+			None,
+			"You didn't say anything, please say what you wanto to buy in the form: `=buy item` (replace `item` with the item that you want",
+			False
+		)
+	else:
+		item = mssg.lower()
+		try:
+			num = int(item.split(' ')[-1])
+			item = ' '.join(item.split(' ')[:-1])
+			maxBuy = False
+		except ValueError:
+			if item.split(' ')[-1] == 'max':
+				item = ' '.join(item.split(' ')[:-1])
+				maxBuy = True
+			else:
+				num = 1
+				maxBuy = False
+		items = generalDB['shop']
+		real = False
+		if item in items:
+			shopType = 'shop'
+			real = True
+			increase = 'hpg'
+			bought = 'bought'
 		else:
-			embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
-			await ctx.send(embed=embed)
+			items = generalDB['idleShop']
+			if item in items:
+				shopType = 'idleShop'
+				real = True
+				increase = 'hpm'
+			bought = 'idleBought'
+		if real:				
+			if maxBuy:
+				num = findMax(item, user, shopType)				
+			if num > 0:
+				stats = userDB[user]
+				score = stats['score']
+				realPrice = fullPrice(item, user, num, shopType)
+				if realPrice <= score:
+					new = stats[increase] + items[item][increase] * num
+					await send_embed(
+						ctx,
+						'Bought Successfully',
+						"'" + item + "' bought successfully!\nYour " + increase + ' is now: ' + bold(commas(str(new * stats['multiplier'])) + ' cm') + " !\nYou are now " + bold(commas(str(stats['score']-realPrice)) + ' cm') + ' tall.',
+						True
+					)
+					stats['score'] -= realPrice
+					stats[increase] = new
+					index = 0
+					for i in items:
+						if i == item:
+							break
+						else:
+							index += 1
+					stats[bought][index] += num
+					userDB[user] = stats
+				else:
+					await ctx.send(
+						embed=discord.Embed(
+							description="You aren't tall enogh for that.\nYou need to grow another " + bold(commas(str(realPrice - stats['score'])) + ' cm!'),
+							color=0xff0000
+						)
+					)
+			else:
+				await send_embed(
+					ctx,
+					None,
+					"Can't buy less that one of an item",
+					False
+				)
+		else:
+			await send_embed(
+				ctx,
+				None,
+				"Item '" + item + "' not found.",
+				False
+				)
 
 
-@client.command(aliases=['suggestion','suggestions'])
+@client.command(aliases=['habitat'])
+async def habitats(ctx):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	desc = showHabitats(user)
+	await send_embed(
+		ctx,
+		'Habitats (' + str(ctx.author) + ')',
+		'Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + desc,
+		True
+	)
+
+@client.command(aliases=['change-habitat'])
+async def change_habitat(ctx, *, mssg=None):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	if mssg != None:
+		habitat = mssg.lower()
+		habitats = generalDB['habitats']
+		if habitat in habitats:
+			stats = userDB[user]
+			userMult = stats['multiplier']
+			habMult = habitats[habitat]['multiplier']
+			if habMult > userMult:
+				score = stats['score']
+				price = habitats[habitat]['price']
+				if score >= price:
+					await send_embed(
+						ctx,
+						None,
+						"Congratulations on moving to " + bold(habitat) + "!\nYour multiplier is now " + bold(str(habitats[habitat]['multiplier']) + 'x') + '.',
+						True
+					)
+					stats['multiplier'] = habitats[habitat]['multiplier']
+					userDB[user] = stats
+				else:
+					await send_embed(
+						ctx,
+						None,
+						"You aren't tall enogh to move there.",
+						False
+					)
+			elif habMult == userMult:
+				await send_embed(
+					ctx,
+					None,
+					'You are already here!',
+					False
+				)
+			else:
+				await send_embed(
+					ctx,
+					None,
+					"You can't go back there!",
+					False
+				)
+		else:
+			send_embed(
+				ctx,
+				None,
+				"Could not find: '" + habitat + "'",
+				False
+			)
+	else:
+		await send_embed(
+			ctx,
+			None,
+			"You didn't say where you wanted to move to!",
+			False
+		)
+		
+
+@client.command(aliases=['daily-reward','dailyreward', 'daily'])
+async def daily_reward(ctx):
+	user = str(ctx.author.id)
+	if not userExists(user):
+		addUser(user)
+	now = time.time()
+	status = dailyCalc(now, userDB[user]['dailyTime'])
+	if status == 'Ready!':
+		stats = userDB[user]
+		multiplier = stats['multiplier']
+		reward = stats['hpg'] * multiplier * 50
+		await send_embed(
+			ctx,
+			None,
+			'Here is your daily reward:\n' + bold(commas(str(reward)) + ' cm') + '!',
+			True
+			)
+		stats['score'] += reward
+		stats['dailyTime'] = now
+		userDB[user] = stats
+	else:
+		await send_embed(
+			ctx,
+			"Not ready yet!",
+			status,
+			False
+		)
+
+
+@client.command(aliases=['bug','bugs','suggestion','suggestions','report','bug_report','bug-report'])
 async def feedback(ctx, *, mssg=None):
-	user2 = str(ctx.author)
-	if mssg==None:
-		embed = discord.Embed(color=0xff0000,description='You didn\'t say anything')
-		await ctx.send(embed=embed)
+	user = str(ctx.author.id)
+	if mssg == None:
+		send_embed(
+			ctx,
+			None,
+			"You didn't say anything",
+			False
+		)
 	else:
-		if len(mssg) < 1900:
-			channel = client.get_channel(727865599467978849)
-			location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
-			footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(ctx.author.id)
-			embed = discord.Embed(color=0x00ff00,description=user2 + ' said:\n```' + mssg + '```\nHere:' + location)
-			embed.set_footer(text=footer)
-			await channel.send(embed=embed)
-			embed2 = discord.Embed(color=0x00ff00,description='Sent successfully\nThanks for your feedback!')
-			await ctx.send(embed=embed2)
-		else:
-			embed = discord.Embed(color=0xff0000,description='Sorry, but your message needs to be less that 1900 characters')
-			await ctx.send(embed=embed)
+		await send_embed(
+			ctx,
+			"Feedback sent!",
+			"Thank you for your feedback!\nYou said:\n```\n" + mssg + "```",
+			True
+		)
+		channel = client.get_channel(727865599467978849)
+		location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
+		footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + user
+		await channel.send(
+			embed=discord.Embed(
+				description=str(ctx.author) + ' said:\n```\n' + mssg + '```\nhere: ' + location
+			).set_footer(
+				text=footer
+			)
+		)
+
+
+@client.event
+async def on_reaction_add(reaction, user):
+	if user.id != 700051830394060801:
+		if str(reaction) in ['⬅️','➡️']:
+			shopType = ''
+			shopTypes = ['shop','idleShop']
+			messageID = str(reaction.message.id)
+			for i in shopTypes:
+				messages = generalDB[i + 'Messages']
+				for x in messages:
+					if x == messageID:
+						shopType = i
+						break
+				if shopType != '':
+					break
+			if shopType != '':
+				page = generalDB[shopType + 'Messages'][messageID]['page']
+				if str(reaction) == '⬅️':
+					page-=1
+				else:
+					page += 1
+				if page < 1: page = 1
+				if page > math.ceil(len(generalDB[shopType]) / 5): page = math.ceil(len(generalDB[shopType]) / 5)
+				user1 = str(user.id)
+				if user1 == generalDB[shopType + 'Messages'][messageID]['user']:
+					desc = getShopPage(user1, page, shopType)
+					embed = discord.Embed(
+						title='Shop (' + str(client.get_user(int(user1))) + ')',
+						description='Height: ' + bold(commas(str(userDB[user1]['score'])) + ' cm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB[shopType]) / 5)) + desc,
+						color=0x00ff00
+					)
+					await reaction.message.delete()
+					sent = await reaction.message.channel.send(embed=embed)
+					await sent.add_reaction('⬅️')
+					await sent.add_reaction('➡️')
+					new = generalDB[shopType + 'Messages']
+					del new[messageID]
+					new[str(sent.id)] = {'page':page,'user':user1}
+					generalDB[shopType + 'Messages'] = new
+
 
 
 @client.event
 async def on_message(message):
 	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
-	if str(message.author.id) not in await get_banned():
-		
+	if str(message.author.id) not in generalDB['banned']:
 		await client.process_commands(message)
 
 
-@client.command()
-async def hug(ctx):
-	await ctx.send(random.choice(['https://tenor.com/view/red-panda-tackle-surprised-hug-cute-gif-12661024','https://tenor.com/view/cat-love-huge-hug-big-gif-11990658']))
-
-@client.command()
-async def cactus(ctx):
-	r=requests.get("https://gallery.codingcactus.codes/api/random").json()
-	cactus_name=r["name"]
-	cactus_url=r["url"]
-
-	embed=discord.Embed(color=0x00ff00, title=cactus_name)
-	embed.set_image(url=cactus_url)
-
-	await ctx.send(embed=embed)
-
-
 
 #-------------------------------------------------------
-#						Admin Commands
+#						Admin
 #-------------------------------------------------------
 
 @client.command()
-async def cooldown(ctx, mssg=None):
-	if ctx.message.author.id == 691576874261807134:
-		if mssg ==None:
-			embed = discord.Embed(color=0xff0000, description='No time entered.')
-			await ctx.send(embed=embed)
-		else:
-			cooldownNum = ctx.message.content.replace('=cooldown ','')
-			if realNum(cooldownNum):
-				await db.set(cooldown=cooldownNum)
-				embed = discord.Embed(color=0x00ff00, description='Cooldown set to ' + bold(cooldownNum))
-				await ctx.send(embed=embed)
-			else:
-				embed = discord.Embed(color=0xff0000, description='Invalid number entered.')
-				await ctx.send(embed=embed)
+@commands.is_owner()
+async def cooldown(ctx, mssg):
+	await send_embed(
+		ctx,
+		None,
+		'Cooldown set to ' + mssg,
+		True
+	)
+	generalDB['cooldown'] = int(mssg)
+
+@client.command(aliases=['addidleitem'])
+#@commands.is_owner()
+async def additem(ctx, *, mssg=None):
+	if mssg == None:
+		send_embed(
+			ctx,
+			None,
+			"You didn't say anything.",
+			False
+		)
 	else:
-		embed = discord.Embed(color=0xff0000, description='You are not my creator!\nOnly he can use this command!')
-		await ctx.send(embed=embed)
-
-
-
-@client.command()
-async def additem(ctx, mssg=None):
-	if ctx.message.author.id == 691576874261807134:
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
-			await ctx.send(embed=embed)
+		if 'idle' in ctx.message.content.split(' ')[0].lower():
+			increase = 'hpm'
+			shopType = 'idleShop'
+			bought = 'idleBought'
 		else:
-			await db.set(shop=str(await db.view('shop')) + '\n' + ctx.message.content.lower().replace('=additem ',''))
-			lst = []
-			boughtStuff = str(await db.view('bought')).split('\n')
-			for i in boughtStuff:
-				if i.replace('\n','') != '':
-					add = ',1'
-				else:
-					add = ''
-				lst.append(i + add)
-			await db.set(bought='\n'.join(lst))
-	else:
-		embed = discord.Embed(color=0xff0000,description='You are not my creator!\nOnly they can use this command!')
-		await ctx.send(embed=embed)
-
-@client.command()
-async def addidleitem(ctx, mssg=None):
-	if ctx.message.author.id == 691576874261807134:
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000,description='You didn\'t write anything')
-			await ctx.send(embed=embed)
-		else:
-			await db.set(idleShop=str(await db.view('idleShop')) + '\n' + ctx.message.content.lower().replace('=addidleitem ',''))
-			lst = []
-			boughtStuff = str(await db.view('idleBought')).split('\n')
-			for i in boughtStuff:
-				if i.replace('\n','') != '':
-					add = ',1'
-				else:
-					add = ''
-				lst.append(i + add)
-			await db.set(idleBought='\n'.join(lst))
-	else:
-		embed = discord.Embed(color=0xff0000,description='You are not my creator!\nOnly they can use this command!')
-		await ctx.send(embed=embed)
+			increase = 'hpg'
+			shopType = 'shop'
+			bought = 'bought'
+		new = {'price':int(mssg.split('=')[1].split(',')[0]),increase:int(mssg.split('=')[1].split(',')[1])}
+		shop = generalDB[shopType]
+		shop[mssg.split('=')[0].lower()] = new
+		generalDB[shopType] = shop
+		await send_embed(
+			ctx,
+			None,
+			str({mssg.split('=')[0]:new}),
+			True
+		)
+		for i in userDB.data:
+			stats = userDB[i]
+			stats[bought].append(0)
+			userDB[i] = stats
 
 @client.command(aliases=['admin-set'])
+@commands.is_owner()
 async def admin_set(ctx):
-	user = str(ctx.message.author.id)
-	if user == '691576874261807134':
-		await updateScore(user,'100000000000')
-		await updateHPG(user,'100000000000')
-		embed = discord.Embed(color=0x00ff00,description='Successfully set your stats master.')
-		await ctx.send(embed=embed)
-
-	else:
-		embed = discord.Embed(color=0xff0000,description='You aren\'t my creator!\nOnly he can do that!')
-		await ctx.send(embed=embed)
-
-
+	user = '691576874261807134'
+	stats = userDB[user]
+	stats['score'] = 1000000000
+	stats['hpg'] = 1000000000
+	stats['hpm'] = 1000000000
+	for i in range(len(stats['bought'])):
+		stats['bought'][i] = 0
+	for x in range(len(stats['idleBought'])):
+		stats['idleBought'][x] = 0
+	stats['multiplier'] = 1
+	userDB[user] = stats
+	send_embed(
+		ctx,
+		'SET!',
+		"Succesfully made you op!",
+		True
+	)
 
 @client.command(aliases=['admin-reset'])
-async def admin_all(ctx):
-	user = str(ctx.message.author.id)
-	if user == '691576874261807134':
-		await updateScore(user,'0')
-		await updateHPG(user,'2')
-		await resetBought(user)
-		await resetHabitat(user)
-		await updateIdle(user, '0')
-		await idleResetBought(user)
-		embed = discord.Embed(color=0x00ff00,description='Successfully reset your stats master.')
-		await ctx.send(embed=embed)
-	else:
-		embed = discord.Embed(color=0xff0000,description='You aren\'t my creator!\nOnly he can do that!')
-		await ctx.send(embed=embed)
+@commands.is_owner()
+async def admin_reset(ctx):
+	user = '691576874261807134'
+	stats = userDB[user]
+	stats['score'] = 0
+	stats['hpg'] = 2
+	stats['hpm'] = 0
+	for i in range(len(stats['bought'])):
+		stats['bought'][i] = 0
+	for x in range(len(stats['idleBought'])):
+		stats['idleBought'][x] = 0
+	stats['multiplier'] = 1
+	userDB[user] = stats
+	send_embed(
+		ctx,
+		'RESET!',
+		"Succesfully made you a noob!",
+		True
+	)
 
-@client.command(aliases=['bug-reply'])
-async def reply(ctx, *, mssg):
-	user = str(ctx.author.id)
-	if user == '691576874261807134':
+@client.command()
+@commands.is_owner()
+async def reply(ctx, *, mssg=None):
+	if mssg != None:
 		channel = int(mssg.split(' ')[0])
 		mentionID = str(mssg.split(' ')[1]).replace('\n','')
 		reply = ' '.join(mssg.split(' ')[2:])
 
 		await client.get_channel(channel).send('<@' + mentionID + '\n> ' + reply)
-
 		embed = discord.Embed(color=0x00ff00,description='Sent successfully\nYou said:```<@' + mentionID + '\n> ' + reply + '```')
 		await ctx.send(embed=embed)
 
 @client.command()
+@commands.is_owner()
 async def ban(ctx, mssg=None):
-	user = str(ctx.author.id)
-	if user == '691576874261807134':
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
-			await ctx.send(embed=embed)
-		elif mssg not in await get_banned():
-			embed = discord.Embed(color=0x00ff00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is now BANNED!')
-			await ctx.send(embed=embed)
-			await db_ban(mssg)
+	if mssg != None:
+		banned = generalDB['banned']
+		if mssg not in banned:
+			banned.append(mssg)
+			await send_embed(
+				ctx,
+				'BANNED',
+				str(client.get_user(int(mssg))) + ' has been banned.',
+				True
+			)
+			generalDB['banned']=banned
 		else:
-			embed = discord.Embed(color=0xf00f00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is ALREADY banned!')
-			await ctx.send(embed=embed)
-
-@client.command(aliases=['see-bans'])
-async def see_bans(ctx):
-	user = str(ctx.author.id)
-	if user == '691576874261807134':
-		lst = await get_banned()
-		string = ''
-		for i in lst:
-		  if i != '':
-		    string += '\n' + str(i) + ' (' + str(client.get_user(int(i))) + ')'
-		embed = discord.Embed(color=0x00ff00, description='```' + string + '```')
-		await ctx.send(embed=embed)
+			await send_embed(
+				ctx,
+				None,
+				'User is already banned',
+				False
+			)
 
 @client.command()
+@commands.is_owner()
 async def unban(ctx, mssg=None):
-	user = str(ctx.author.id)
-	if user == '691576874261807134':
-		if mssg == None:
-			embed = discord.Embed(color=0xff0000, description='You didn\'t say anyone!')
-			await ctx.send(embed=embed)
-		elif mssg in await get_banned():
-			embed = discord.Embed(color=0x00ff00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') is now NOT banned!')
-			await ctx.send(embed=embed)
-			await db_unban(mssg)
+	if mssg != None:
+		banned = generalDB['banned']
+		if mssg in banned:
+			newLst = []
+			for i in banned:
+				if i != mssg:
+					newLst.append(i)
+			generalDB['banned'] = newLst
+			await send_embed(
+				ctx,
+				'UNBANNED',
+				str(client.get_user(int(mssg))) + ' is now allowed to use the bot.',
+				True
+			)
 		else:
-			embed = discord.Embed(color=0xf00f00, description=mssg + ' (' + str(client.get_user(int(mssg))) + ') was NOT banned!')
-			await ctx.send(embed=embed)
+			await send_embed(
+				ctx,
+				None,
+				"User already isn't banned.",
+				False
+			)
+
+@client.command(aliases=['see-bans','banned','seebans'])
+@commands.is_owner()
+async def see_bans(ctx):
+	banned = generalDB['banned']
+	desc = '```'
+	for i in banned:
+		desc += '\n' + str(client.get_user(int(i))) + ': ' + i
+	await send_embed(
+		ctx,
+		'Banned users',
+		desc + '```',
+		True
+	)
+
 
 
 @client.command()
@@ -1448,6 +915,7 @@ async def restart(ctx):
   await ctx.send(embed=embed)
   os.system("clear")
   os.execv(sys.executable, ['python'] + sys.argv)
+
 
 server.s()
 client.run(os.getenv('TOKEN'))

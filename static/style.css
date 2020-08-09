@@ -129,6 +129,14 @@ input, button{
 	font-size: 14px;
 }
 
+button:hover{
+	cursor: pointer;
+}
+
+input:focus, button:focus{
+	outline: none;
+}
+
 #leaderboard a, #leaderboard{
 	color: #ccc;
 }
