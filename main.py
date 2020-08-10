@@ -127,7 +127,7 @@ def addUser(user):
 			format = "png"
 		else:
 			format = "gif"
-		pfp = user2.avatar_url_as(format = format)
+		pfp = str(user2.avatar_url_as(format=format))
 	except AttributeError:
 		pfp = None
 	new[user] = {'name':str(client.get_user(int(user))), 'pfp':pfp}
@@ -246,12 +246,20 @@ def showLeaderboard(page):
 			if userDB[u]['score'] == s and u not in users:
 				users.append(u)
 				break
-	start = (page - 1) * 10
-	end = page * 10
-	scores = scores[start:end]
+	numPages = math.ceil(len(scores) / 10)
+	if page < 1:
+		page = 1
+	if page > numPages:
+		page = numPages
+	if page < numPages:
+		scores = scores[(page-1) * 10: page * 10]
+		users = users[(page-1) * 10: page * 10]
+	else:
+		scores = scores[(page-1) * 10:]
+		users = users[(page-1) * 10:]
 	desc ='\n```\n'
 	for x in range(len(scores)):
-		desc += str(x + 1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + ' cm\n'
+		desc += str((page-1)*10+x+1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + ' cm\n'
 	return desc + '```'
 
 
@@ -340,11 +348,17 @@ async def leaderboard(ctx, mssg=None):
 			page = int(mssg)
 		except ValueError:
 			page = 1
+	total = 0
+	for i in userDB.data:
+		total += 1
+	numPages = math.ceil((total-1)/10)
+	if page > numPages:
+		page = numPages
 	desc = showLeaderboard(page)
 	sent = await ctx.send(
 		embed=discord.Embed(
 			title='leaderboard',
-			description='Page: ' + str(page) + desc,
+			description='Page: ' + str(page) + '/' + str(numPages) + desc,
 			color=0x00ff00
 		)
 	)
@@ -730,6 +744,39 @@ async def on_reaction_add(reaction, user):
 					del new[messageID]
 					new[str(sent.id)] = {'page':page,'user':user1}
 					generalDB[shopType + 'Messages'] = new
+			else:
+				if messageID in generalDB['leadMessages']:
+					info = generalDB['leadMessages'][messageID]
+					page = info['page']
+					if str(reaction) == '⬅️':
+						page -= 1
+					else:
+						page += 1
+					total = 0
+					for i in userDB.data:
+						total += 1
+					numPages = math.ceil((total-1)/10)
+					if page < 1:
+						page = 1
+					elif page > numPages:
+						page = numPages
+					user1 = str(user.id)
+					if user1 == info['user']:
+						desc = showLeaderboard(page)
+						await reaction.message.delete()
+						sent = await reaction.message.channel.send(
+							embed=discord.Embed(
+								title='leaderboard',
+								description='Page: ' + str(page) + '/' + str(numPages) + desc,
+								color=0x00ff00
+							)
+						)
+						await sent.add_reaction('⬅️')
+						await sent.add_reaction('➡️')
+						new = generalDB['leadMessages']
+						del new[messageID]
+						new[str(sent.id)] = {'page':page,'user':user1}
+						generalDB['leadMessages'] = new
 
 
 
