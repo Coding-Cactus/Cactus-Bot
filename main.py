@@ -7,9 +7,13 @@ userDB = DB('userDB', dbTOKEN)
 generalDB = DB('generalDB', dbTOKEN)
 pfpDB = DB('pfpDB', dbTOKEN)
 
-client = discord.Client()
 
-client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=True)
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+intents.members = True
+
+client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=True, intents=intents)
 
 
 
@@ -74,7 +78,7 @@ async def help(ctx, command=None):
 #						Functions
 #-------------------------------------------------------
 
-bold = lambda a: '**'+a+'**'
+bold = lambda a: '**'+str(a)+'**'
 
 def commas(i):
 	s,i="",str(i)
@@ -305,6 +309,24 @@ def set_intervalPFPs(func, sec):
 #						Commands
 #-------------------------------------------------------
 
+@client.command()
+async def ping(ctx):
+	embed = discord.Embed(
+		title='PING!',
+		description='',
+		color=0xcc0000
+	)
+	start = time.time()
+	msg = await ctx.send(embed=embed)
+	end = time.time() - start
+	embed2 = discord.Embed(
+		title='PING!',
+		description=str(end) + ' seconds.',
+		color=0x00cc00
+	)
+	await msg.edit(embed=embed2)
+
+
 @client.command(aliases=['info','uptime','source','source-code','prefix'])
 async def invite(ctx):
 	now = time.time()
@@ -379,7 +401,7 @@ async def prof(ctx, *, member: discord.Member=None):
 		user = str(member.id)
 	if userExists(user):
 		stats = userDB[user]
-		desc = 'Height: ' + bold(commas(str(stats['score'])) + ' cm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg'])) + ' cm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']) )+ ' cm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaiy Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
+		desc = 'Height: ' + bold(commas(str(stats['score'])) + ' cm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg'])) + ' cm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']) )+ ' cm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaily Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
 		await send_embed(
 			ctx,
 			name + "'s profile",
@@ -495,7 +517,7 @@ async def buy(ctx, *, mssg=None):
 		await send_embed(
 			ctx,
 			None,
-			"You didn't say anything, please say what you wanto to buy in the form: `=buy item` (replace `item` with the item that you want",
+			"You didn't say anything, please say what you wanto to buy in the form: `=buy item` (replace `item` with the item that you want)",
 			False
 		)
 	else:
@@ -537,7 +559,7 @@ async def buy(ctx, *, mssg=None):
 					await send_embed(
 						ctx,
 						'Bought Successfully',
-						"'" + item + "' bought successfully!\nYour " + increase + ' is now: ' + bold(commas(str(new * stats['multiplier'])) + ' cm') + " !\nYou are now " + bold(commas(str(stats['score']-realPrice)) + ' cm') + ' tall.',
+						"'" + item + "'[x" + str(num) + "] bought successfully!\nYour " + increase + ' is now: ' + bold(commas(str(new * stats['multiplier'])) + ' cm') + " !\nYou are now " + bold(commas(str(stats['score']-realPrice)) + ' cm') + ' tall.',
 						True
 					)
 					stats['score'] -= realPrice
@@ -779,6 +801,27 @@ async def on_reaction_add(reaction, user):
 						generalDB['leadMessages'] = new
 
 
+@client.command(aliases=['role'])
+async def roles(ctx, *, role: discord.Role=None):
+	if role == None:
+		await ctx.send(
+			embed=discord.Embed(
+				description='You didn\'t sepcify a role',
+				color=0xcc0000
+			)
+		)
+	else:
+		people = ''
+		for i in ctx.guild.members:
+			if role in i.roles:
+				people += '- ' + str(i) + '\n'
+		await ctx.send(
+			embed=discord.Embed(
+				title=str(role),
+				description=people,
+				color=0x00cc00
+			)
+		)
 
 @client.event
 async def on_message(message):
@@ -805,7 +848,7 @@ async def cooldown(ctx, mssg):
 	generalDB['cooldown'] = int(mssg)
 
 @client.command(aliases=['addidleitem'])
-#@commands.is_owner()
+@commands.is_owner()
 async def additem(ctx, *, mssg=None):
 	if mssg == None:
 		send_embed(
@@ -955,7 +998,7 @@ async def see_bans(ctx):
 
 
 
-@client.command()
+@client.command(aliases=['r'])
 @commands.is_owner()
 async def restart(ctx):
   embed=discord.Embed(color=0x00ff00,title=":white_check_mark:",description="Successfully Restarted")

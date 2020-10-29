@@ -9,9 +9,9 @@
 
 <div id="stats">
 	<h3>Stats</h3>
-	<p>Height: <strong>{{user['score']}} cm</strong></p>
-	<p>Height per Growth: <strong>{{user['hpg']}} cm</strong></p>
-	<p>Height per Minute: <strong>{{user['hpm']}} cm</strong></p>
+	<p>Height: <strong>{{commas(user['score'])}} cm</strong></p>
+	<p>Height per Growth: <strong>{{commas(user['hpg'])}} cm</strong></p>
+	<p>Height per Minute: <strong>{{commas(user['hpm'])}} cm</strong></p>
 	<p>Multiplier: <strong>{{user['multiplier']}}x</strong></p>
 </div>
 

@@ -9,8 +9,8 @@ description = ""
 name = "discord-bot"
 version = "0.1.0"
 [tool.poetry.dependencies]
-discord = "^1.0"
 flask = "^1.1"
 python = "^3.8"
 easypydb = "^0.1"
+"discord.py" = "^1.5.1"
 [tool.poetry.dev-dependencies]

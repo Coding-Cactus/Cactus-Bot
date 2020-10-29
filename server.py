@@ -62,7 +62,7 @@ def profile(ID):
 				stats['rank'] = str(i + 1)
 				break		
 
-		return flask.render_template("profile.html", user=stats, pfp=pfp)
+		return flask.render_template("profile.html", user=stats, pfp=pfp, commas=lambda i: commas(i))
 	else:
 		return flask.render_template("notfound.html", user=ID)
 	
