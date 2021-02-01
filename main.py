@@ -654,7 +654,7 @@ async def change_habitat(ctx, *, mssg=None):
 					False
 				)
 		else:
-			send_embed(
+			await send_embed(
 				ctx,
 				None,
 				"Could not find: '" + habitat + "'",
@@ -702,7 +702,7 @@ async def daily_reward(ctx):
 async def feedback(ctx, *, mssg=None):
 	user = str(ctx.author.id)
 	if mssg == None:
-		send_embed(
+		await send_embed(
 			ctx,
 			None,
 			"You didn't say anything",
@@ -851,7 +851,7 @@ async def cooldown(ctx, mssg):
 @commands.is_owner()
 async def additem(ctx, *, mssg=None):
 	if mssg == None:
-		send_embed(
+		await send_embed(
 			ctx,
 			None,
 			"You didn't say anything.",
@@ -895,7 +895,7 @@ async def admin_set(ctx):
 		stats['idleBought'][x] = 0
 	stats['multiplier'] = 1
 	userDB[user] = stats
-	send_embed(
+	await send_embed(
 		ctx,
 		'SET!',
 		"Succesfully made you op!",
@@ -916,7 +916,7 @@ async def admin_reset(ctx):
 		stats['idleBought'][x] = 0
 	stats['multiplier'] = 1
 	userDB[user] = stats
-	send_embed(
+	await send_embed(
 		ctx,
 		'RESET!',
 		"Succesfully made you a noob!",
