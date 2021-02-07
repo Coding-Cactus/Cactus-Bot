@@ -41,6 +41,8 @@ def main():
 	
 @app.route('/leaderboard')
 def leaders():
+	userDB.load()
+	pfpDB.load()
 	ranks = ranking()
 	orderedScores = ranks[0]
 	orderedPlayers = ranks[1]
@@ -52,6 +54,8 @@ def leaders():
 
 @app.route('/user/<ID>')
 def profile(ID):
+	userDB.load()
+	pfpDB.load()
 	if ID in userDB.data:
 		pfp = pfpDB['stuff'][ID]['pfp']
 		stats = userDB[ID]
@@ -72,6 +76,8 @@ def show_search():
 		
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+	userDB.load()
+	pfpDB.load()
 	search = flask.request.form['name']
 	found = False
 	results = []
@@ -87,7 +93,7 @@ def favicon():
   return flask.send_file("favicon.ico")
 
 def run():
-	app.run(host='0.0.0.0', port=8080)
+	app.run('0.0.0.0')
 
 def s():
 	server = Thread(target=run)

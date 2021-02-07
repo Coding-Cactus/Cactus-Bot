@@ -362,6 +362,7 @@ async def lines(ctx):
 
 @client.command(aliases=['leaders', 'ranks', 'ranking'])
 async def leaderboard(ctx, mssg=None):
+	userDB.load()
 	user = str(ctx.author.id)
 	if mssg == None:
 		page = 1
@@ -393,6 +394,7 @@ async def leaderboard(ctx, mssg=None):
 
 @client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
 async def prof(ctx, *, member: discord.Member=None):
+	userDB.load()
 	if member == None:
 		name = str(ctx.author)
 		user = str(ctx.author.id)
@@ -422,6 +424,7 @@ async def prof(ctx, *, member: discord.Member=None):
 
 @client.command()
 async def grow(ctx):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -452,6 +455,7 @@ async def grow(ctx):
 
 @client.command(aliases=['store'])
 async def shop(ctx, mssg=None):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -481,6 +485,7 @@ async def shop(ctx, mssg=None):
 
 @client.command(aliases=['ishop', 'idle-shop', 'i-shop'])
 async def idle_shop(ctx, mssg=None):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -510,6 +515,7 @@ async def idle_shop(ctx, mssg=None):
 
 @client.command(aliases=['ibuy', 'i-buy', 'idle-buy', 'purchase'])
 async def buy(ctx, *, mssg=None):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -610,6 +616,7 @@ async def habitats(ctx):
 
 @client.command(aliases=['change-habitat'])
 async def change_habitat(ctx, *, mssg=None):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -671,6 +678,7 @@ async def change_habitat(ctx, *, mssg=None):
 
 @client.command(aliases=['daily-reward','dailyreward', 'daily'])
 async def daily_reward(ctx):
+	userDB.load()
 	user = str(ctx.author.id)
 	if not userExists(user):
 		addUser(user)
@@ -729,6 +737,7 @@ async def feedback(ctx, *, mssg=None):
 
 @client.event
 async def on_reaction_add(reaction, user):
+	userDB.load()
 	if user.id != 700051830394060801:
 		if str(reaction) in ['⬅️','➡️']:
 			shopType = ''
