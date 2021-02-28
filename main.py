@@ -393,14 +393,14 @@ async def leaderboard(ctx, mssg=None):
 
 
 @client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
-async def prof(ctx, *, member: discord.Member=None):
+async def prof(ctx, *, user: discord.User=None):
 	userDB.load()
-	if member == None:
+	if user == None:
 		name = str(ctx.author)
 		user = str(ctx.author.id)
 	else:
-		name = str(member)
-		user = str(member.id)
+		name = str(user)
+		user = str(user.id)
 	if userExists(user):
 		stats = userDB[user]
 		desc = 'Height: ' + bold(commas(str(stats['score'])) + ' cm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg'])) + ' cm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']) )+ ' cm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaily Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
@@ -1014,7 +1014,6 @@ async def restart(ctx):
   await ctx.send(embed=embed)
   os.system("clear")
   os.execv(sys.executable, ['python'] + sys.argv)
-
 
 server.s()
 client.run(os.getenv('TOKEN'))
