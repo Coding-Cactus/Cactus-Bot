@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    
-    <meta name="author" content="CodingCactus" >
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		
+		<meta name="author" content="CodingCactus" >
 		<meta name="keywords" content="discord,discord-bot,cactus,cactus-bot" >
 
-    <title>{% block title %}Cactus Bot{% endblock%}</title>
+	<title>{% block title %}Cactus Bot{% endblock%}</title>
 
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="theme-color" content="#00cc00">
 
-    <meta property="og:title" content="{% block ogp_title %}Cactus Bot{% endblock %}" />
-    <meta property="og:type" content="website" />
-    <meta property="og:description" content="A fun discord bot where you live the life of a cactus and try to become the tallest!"/>
-    <meta property="og:image" content="{% block ogp_img %}/favicon.ico{% endblock %}" />
+		<meta property="og:title" content="{% block ogp_title %}Cactus Bot{% endblock %}" />
+		<meta property="og:type" content="website" />
+		<meta property="og:description" content="A fun discord bot where you live the life of a cactus and try to become the tallest!"/>
+		<meta property="og:image" content="{% block ogp_img %}/favicon.ico{% endblock %}" />
 
 		<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2&display=swap" rel="stylesheet" />
-    <link href="/static/style.css" rel="stylesheet" type="text/css" />
+	<link href="/static/style.css" rel="stylesheet" type="text/css" />
 
 		{% block head %}{% endblock %}
 
-  </head>
-  <body>
-	<main>
-		<h1>Cactus Bot</h1>
+	</head>
+	<body>
+		<main>
+			<h1>Cactus Bot</h1>
 
-		<h2>
-			A fun discord bot where you live the life of a cactus and try to become the tallest!
-		</h2>
-		<nav>
-			<ul>
-				<li><a href="/">Main</a></li>
-				<li><a href="/leaderboard">Leaderboard</a></li>
-				<li><a href="/search">Search</a></li>
-			</ul>
-		</nav>
-      {% block content %}{% endblock %}
-    </main>
-				
-  </body>
+			<h2>
+				A fun discord bot where you live the life of a cactus and try to become the tallest!
+			</h2>
+			<nav>
+				<ul>
+					<li><a href="/">Main</a></li>
+					<li><a href="/leaderboard">Leaderboard</a></li>
+					<li><a href="/search">Search</a></li>
+					<li><a href="/stats">Stats</a></li>
+				</ul>
+			</nav>
+		{% block content %}{% endblock %}
+		</main>
+
+	</body>
 </html>

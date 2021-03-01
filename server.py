@@ -88,6 +88,18 @@ def search():
 	
 	return flask.render_template('search.html', found=found, results=results)
 
+
+@app.route("/stats")
+def stats():
+	userDB.load()
+	pfpDB.load()
+	ranks = ranking()
+	orderedScores = ranks[0]
+	orderedPlayers = ranks[1]
+	orderedNames = [name[0] for name in orderedPlayers]
+	return flask.render_template("stats.html", orderedScores=orderedScores, orderedPlayers=orderedPlayers, orderedNames=orderedNames)
+
+
 @app.route("/favicon.ico")
 def favicon():
   return flask.send_file("favicon.ico")

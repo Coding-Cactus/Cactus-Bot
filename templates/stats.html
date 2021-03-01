@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Cactus Bot - stats{% endblock%}
+{% block ogp_title %}Cactus Bot - stats{% endblock%}
+
+{% block content %}
+	<h3>Top 10 cacti</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="top10"></canvas>
+	</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+	<script>
+		function randColours(len) {
+			colours = [];
+			for (let i=0; i<len; i++) {
+				colours.push("rgb("+Math.floor(Math.random() * 256)+","+Math.floor(Math.random() * 256)+","+Math.floor(Math.random() * 256)+")");
+			}
+			return colours; 
+		}
+		const top10 = document.getElementById('top10');
+		const top10Chart = new Chart(top10, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames[:10]|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: {{orderedScores[:10]|safe}},
+					backgroundColor: randColours(10),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
+
+	
+	<h3>Top 50 cacti</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="top50"></canvas>
+	</div>
+	<script>
+		const top50 = document.getElementById('top50');
+		const top50Chart = new Chart(top50, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames[:50]|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: {{orderedScores[:50]|safe}},
+					backgroundColor: randColours(50),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
+
+	
+	<h3>All cacti</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="all"></canvas>
+	</div>
+	<script>
+		const all = document.getElementById('all');
+		const allchart = new Chart(all, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: {{orderedScores|safe}},
+					backgroundColor: randColours({{orderedScores|length}}),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
+{% endblock %}

@@ -37,7 +37,7 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-
+'''
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -49,7 +49,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-
+'''
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -86,8 +86,9 @@ def units(num):
 	return num.split(",")[0]+"."+num.split(",")[1]+" "+u[l-1]
 
 def commas(i,u=True):
-	if len(i)<3:return i+" c"
-	if len(i)<6:return str(int(i)/100)+" "
+	if u:
+		if len(i)<3:return i+" c"
+		if len(i)<6:return str(int(i)/100)+" "
 	s,i="",str(round(int(i)/100))
 	for x in range(len(i)//3):s=","+i[-3:]+s;i=i[:-3]
 	if i=="":s=s[1:]
