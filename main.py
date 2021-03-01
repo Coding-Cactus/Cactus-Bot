@@ -80,11 +80,19 @@ async def help(ctx, command=None):
 
 bold = lambda a: '**'+str(a)+'**'
 
-def commas(i):
-	s,i="",str(i)
+def units(num):
+	l=len(num.split(","))
+	u=["", "k", "M", "G", "T", "P", "E", "Y"]
+	return num.split(",")[0]+"."+num.split(",")[1]+" "+u[l-1]
+
+def commas(i,u=True):
+	if len(i)<3:return i+" c"
+	if len(i)<6:return str(int(i)/100)+" "
+	s,i="",str(round(int(i)/100))
 	for x in range(len(i)//3):s=","+i[-3:]+s;i=i[:-3]
 	if i=="":s=s[1:]
-	return(i+s)
+	if u:return units(i+s)
+	else:return i+s+" c" 
 
 async def send_embed(ctx, t, d, good):
 	if good:
@@ -178,7 +186,7 @@ def getShopPage(user, page, shopType):
 		items = ''
 	if items != '':
 		for i in items:
-			msg += '\n' + i.title() + '\nPrice: ' + commas(str(fullPrice(i, user, 1, shopType))) + ' cm\nIncrease in ' + increase + ': ' + commas(str(shop[i][increase])) + 'cm\n'
+			msg += '\n' + i.title() + '\nPrice: ' + commas(str(fullPrice(i, user, 1, shopType))) + 'm\nIncrease in ' + increase + ': ' + commas(str(shop[i][increase])) + 'm\n'
 	else:
 		msg = "\n```Page '" + str(page) + "' not found."
 	return msg + '```'
@@ -234,7 +242,7 @@ def showHabitats(user):
 		elif mult == multiplier:
 			desc += "Current Location"
 		else:
-			desc += commas(str(habitats[i]['price'])) + ' cm'
+			desc += commas(str(habitats[i]['price'])) + 'm'
 		desc += '\nMultiplier: ' + str(mult) + 'x\n'
 	return desc + '```'
 
@@ -263,7 +271,7 @@ def showLeaderboard(page):
 		users = users[(page-1) * 10:]
 	desc ='\n```\n'
 	for x in range(len(scores)):
-		desc += str((page-1)*10+x+1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + ' cm\n'
+		desc += str((page-1)*10+x+1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + 'm\n'
 	return desc + '```'
 
 
@@ -403,7 +411,7 @@ async def prof(ctx, *, user: discord.User=None):
 		user = str(user.id)
 	if userExists(user):
 		stats = userDB[user]
-		desc = 'Height: ' + bold(commas(str(stats['score'])) + ' cm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg'])) + ' cm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']) )+ ' cm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaily Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
+		desc = 'Height: ' + bold(commas(str(stats['score']), False) + 'm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg']), False) + 'm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']), False)+ 'm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaily Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
 		await send_embed(
 			ctx,
 			name + "'s profile",
@@ -435,7 +443,7 @@ async def grow(ctx):
 		await send_embed(
 			ctx,
 			'GROW!',
-			'You grew ' + bold(commas(str(userStats['hpg']*userStats['multiplier'])) + ' cm') + '\nYou are now ' + bold(commas(str(userStats['score'] + userStats['hpg'] * userStats['multiplier'])) + ' cm') + '!',
+			'You grew ' + bold(commas(str(userStats['hpg']*userStats['multiplier'])) + 'm') + '\nYou are now ' + bold(commas(str(userStats['score'] + userStats['hpg'] * userStats['multiplier'])) + 'm') + '!',
 			True
 		)
 		userStats['score'] += userStats['hpg'] * userStats['multiplier']
@@ -469,7 +477,7 @@ async def shop(ctx, mssg=None):
 	desc = getShopPage(user, page, 'shop')
 	embed = discord.Embed(
 		title='Shop (' + str(client.get_user(int(user))) + ')',
-		description='Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + '\nPage: ' + str(page)  + '/' + str(math.ceil(len(generalDB['shop']) / 5)) + desc,
+		description='Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + '\nPage: ' + str(page)  + '/' + str(math.ceil(len(generalDB['shop']) / 5)) + desc,
 		color=0x00ff00
 	)
 	sent = await ctx.send(embed=embed)
@@ -499,7 +507,7 @@ async def idle_shop(ctx, mssg=None):
 	desc = getShopPage(user, page, 'idleShop')
 	embed = discord.Embed(
 		title='Shop (' + str(client.get_user(int(user))) + ')',
-		description='Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB['idleShop']) / 5)) + desc,
+		description='Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB['idleShop']) / 5)) + desc,
 		color=0x00ff00
 	)
 	sent = await ctx.send(embed=embed)
@@ -565,7 +573,7 @@ async def buy(ctx, *, mssg=None):
 					await send_embed(
 						ctx,
 						'Bought Successfully',
-						"'" + item + "'[x" + str(num) + "] bought successfully!\nYour " + increase + ' is now: ' + bold(commas(str(new * stats['multiplier'])) + ' cm') + " !\nYou are now " + bold(commas(str(stats['score']-realPrice)) + ' cm') + ' tall.',
+						"'" + item + "'[x" + str(num) + "] bought successfully!\nYour " + increase + ' is now: ' + bold(commas(str(new * stats['multiplier'])) + 'm') + " !\nYou are now " + bold(commas(str(stats['score']-realPrice)) + 'm') + ' tall.',
 						True
 					)
 					stats['score'] -= realPrice
@@ -581,7 +589,7 @@ async def buy(ctx, *, mssg=None):
 				else:
 					await ctx.send(
 						embed=discord.Embed(
-							description="You aren't tall enogh for that.\nYou need to grow another " + bold(commas(str(realPrice - stats['score'])) + ' cm!'),
+							description="You aren't tall enogh for that.\nYou need to grow another " + bold(commas(str(realPrice - stats['score'])) + 'm!'),
 							color=0xff0000
 						)
 					)
@@ -610,7 +618,7 @@ async def habitats(ctx):
 	await send_embed(
 		ctx,
 		'Habitats (' + str(ctx.author) + ')',
-		'Height: ' + bold(commas(str(userDB[user]['score'])) + ' cm') + desc,
+		'Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + desc,
 		True
 	)
 
@@ -691,7 +699,7 @@ async def daily_reward(ctx):
 		await send_embed(
 			ctx,
 			None,
-			'Here is your daily reward:\n' + bold(commas(str(reward)) + ' cm') + '!',
+			'Here is your daily reward:\n' + bold(commas(str(reward)) + 'm') + '!',
 			True
 			)
 		stats['score'] += reward
@@ -764,7 +772,7 @@ async def on_reaction_add(reaction, user):
 					desc = getShopPage(user1, page, shopType)
 					embed = discord.Embed(
 						title='Shop (' + str(client.get_user(int(user1))) + ')',
-						description='Height: ' + bold(commas(str(userDB[user1]['score'])) + ' cm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB[shopType]) / 5)) + desc,
+						description='Height: ' + bold(commas(str(userDB[user1]['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB[shopType]) / 5)) + desc,
 						color=0x00ff00
 					)
 					await reaction.message.delete()
@@ -1004,7 +1012,6 @@ async def see_bans(ctx):
 		desc + '```',
 		True
 	)
-
 
 
 @client.command(aliases=['r'])
