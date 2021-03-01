@@ -371,7 +371,7 @@ async def lines(ctx):
 	embed = discord.Embed(color=0x00ff00, description='Total number of lines of code to make me: ' + str(numLines))
 	await ctx.send(embed=embed)
 
-@client.command(aliases=['leaders', 'ranks', 'ranking'])
+@client.command(aliases=['leaders', 'ranks', 'ranking', 'lb'])
 async def leaderboard(ctx, mssg=None):
 	userDB.load()
 	user = str(ctx.author.id)
