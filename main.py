@@ -24,7 +24,7 @@ client = commands.Bot(command_prefix='=', help_command=None, case_insensitive=Tr
 @client.event
 async def on_ready():
 	print('Good Morning')
-	activity = discord.Activity(name='For =help', type=discord.ActivityType.watching)
+	activity = discord.Activity(name='for =help', type=discord.ActivityType.watching)
 	await client.change_presence(activity=activity)
 	print('In ' + str(len(client.guilds)) + ' servers')
 	for i in client.guilds:
@@ -37,7 +37,7 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-'''
+
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -49,7 +49,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-'''
+
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -89,7 +89,9 @@ def commas(i,u=True):
 	if u:
 		if len(i)<3:return i+" c"
 		if len(i)<6:return str(int(i)/100)+" "
-	s,i="",str(round(int(i)/100))
+	s=""
+	if u:i=str(round(int(i)/100))
+	else:i=str(i)
 	for x in range(len(i)//3):s=","+i[-3:]+s;i=i[:-3]
 	if i=="":s=s[1:]
 	if u:return units(i+s)
@@ -344,7 +346,7 @@ async def invite(ctx):
 	mins = str(round((diff - int(hrs) * 3600) // 60))
 	secs = str(round(diff - int(hrs) *3600 - int(mins) * 60))
 	timestr = bold(hrs + 'hrs ' + mins + 'mins ' + secs + 'secs')
-	embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://repl.it/@CodingCactus/Cactus-Bot\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
+	embed = discord.Embed(color=0x00ff00,title='Info',description='Prefix: `=`\nSource Code: https://github.com/Coding-Cactus/Cactus-Bot\nInvite Link: https://discordapp.com/oauth2/authorize?client_id=700051830394060801&scope=bot&permissions=0\nUptime: ' + timestr)
 	await ctx.send(embed=embed)
 
 @client.command(aliases=['users'])
@@ -360,7 +362,7 @@ async def servers(ctx):
 
 @client.command()
 async def lines(ctx):
-	files = ['main.py', 'static/style.css', 'templates/index.html', 'templates/base.html', 'templates/leaderboard.html', 'templates/notfound.html', 'templates/profile.html', 'templates/search.html', 'server.py']
+	files = ['main.py', 'static/style.css', 'templates/index.html', 'templates/base.html', 'templates/leaderboard.html', 'templates/notfound.html', 'templates/profile.html', 'templates/search.html', 'templates/stats.html', 'server.py']
 	numLines = 0
 	for x in files:
 		with open(x) as txt:
@@ -899,6 +901,27 @@ async def additem(ctx, *, mssg=None):
 			stats[bought].append(0)
 			userDB[i] = stats
 
+@client.command()
+@commands.is_owner()
+async def addhabitat(ctx, *, mssg=None):
+	if mssg == None:
+		await send_embed(
+			ctx,
+			None,
+			"You didn't say anything.",
+			False
+		)
+	else:
+		generalDB["habitats"][mssg.split("=")[0].lower()] = {"price":int(mssg.split("=")[1].split(",")[0]),"multiplier":int(mssg.split("=")[1].split(",")[1])}
+		generalDB.save()		
+		await send_embed(
+			ctx,
+			None,
+			str({mssg.split('=')[0]:{"price":mssg.split("=")[1].split(",")[0],"multiplier":mssg.split("=")[1].split(",")[1]}}),
+			True
+		)
+
+
 @client.command(aliases=['admin-set'])
 @commands.is_owner()
 async def admin_set(ctx):
@@ -911,7 +934,7 @@ async def admin_set(ctx):
 		stats['bought'][i] = 0
 	for x in range(len(stats['idleBought'])):
 		stats['idleBought'][x] = 0
-	stats['multiplier'] = 1
+	stats['multiplier'] = 7
 	userDB[user] = stats
 	await send_embed(
 		ctx,
