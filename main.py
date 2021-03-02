@@ -70,6 +70,7 @@ async def help(ctx, command=None):
 		embed.add_field(name='leaderboard', value='View leaderboard.')
 		embed.add_field(name='feedback', value='Send feedback on how to improve this bot.\ne.g. new item for the shops.')
 		embed.add_field(name='bug', value='Report a bug (please be specific).')
+		embed.add_field(name='hug', value='Give your cactus a hug, :).')
 		embed.set_footer(text='Prefix is \'=\'')
 		await ctx.send(embed=embed)
 
@@ -745,6 +746,10 @@ async def feedback(ctx, *, mssg=None):
 			)
 		)
 
+		
+@client.command()
+async def hug(ctx, *):
+    await ctx.send('You give your cactus a hug, :)')
 
 @client.event
 async def on_reaction_add(reaction, user):
