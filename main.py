@@ -750,6 +750,10 @@ async def feedback(ctx, *, mssg=None):
 async def hug(ctx):
     await ctx.send('You give your cactus a hug, :)')
 
+@client.command()
+async def settings(ctx):
+	await ctx.send('This is a work in progress.')
+
 @client.event
 async def on_reaction_add(reaction, user):
 	userDB.load()
