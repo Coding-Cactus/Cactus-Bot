@@ -339,7 +339,7 @@ async def ping(ctx):
 	await msg.edit(embed=embed2)
 
 
-@client.command(aliases=['info','uptime','source','source-code','prefix'])
+@client.command(aliases=['info','uptime','source','source-code','prefix','github'])
 async def invite(ctx):
 	now = time.time()
 	diff = now - uptime
