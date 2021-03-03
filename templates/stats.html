@@ -97,4 +97,98 @@
 			}
 		});
 	</script>
+
+	<h3>Top 10 cacti - logarithmic pie chart</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="top10Log"></canvas>
+	</div>
+	<script>
+		function logAll(lst) {
+			lst2 = []
+			lst.forEach( elem => {
+				if (elem !== 0) {
+					lst2.push(Math.log(elem));
+				}
+			});
+			return lst2
+		}
+		const top10Log = document.getElementById('top10Log');
+		const top10LogChart = new Chart(top10Log, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames[:10]|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: logAll({{orderedScores[:10]|safe}}),
+					backgroundColor: randColours(10),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
+
+	
+	<h3>Top 50 cacti - logarithmic pie chart</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="top50Log"></canvas>
+	</div>
+	<script>
+		const top50Log = document.getElementById('top50Log');
+		const top50LogChart = new Chart(top50Log, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames[:50]|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: logAll({{orderedScores[:50]|safe}}),
+					backgroundColor: randColours(50),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
+
+	<h3>All cacti - logarithmic pie chart</h3>
+	<div style="position: relative; height: 90vh">
+		<canvas id="allLog"></canvas>
+	</div>
+	<script>
+		const allLog = document.getElementById('allLog');
+		const allLogChart = new Chart(allLog, {
+			type: 'pie',
+			data: {
+				labels: {{orderedNames|safe}},
+				datasets: [{
+					label: 'Height in cm',
+					data: logAll({{orderedScores|safe}}),
+					backgroundColor: randColours({{orderedScores|length}}),
+					borderColor: "rgb(0,0,0)",
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				legend: {
+					display: false
+				}
+			}
+		});
+	</script>
 {% endblock %}

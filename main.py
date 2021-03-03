@@ -372,7 +372,7 @@ async def lines(ctx):
 	embed = discord.Embed(color=0x00ff00, description='Total number of lines of code to make me: ' + str(numLines))
 	await ctx.send(embed=embed)
 
-@client.command(aliases=['leaders', 'ranks', 'ranking', 'lb'])
+@client.command(aliases=['leaders', 'ranks', 'ranking', 'lb', 'lbd'])
 async def leaderboard(ctx, mssg=None):
 	userDB.load()
 	user = str(ctx.author.id)
@@ -746,9 +746,8 @@ async def feedback(ctx, *, mssg=None):
 			)
 		)
 
-		
 @client.command()
-async def hug(ctx, *):
+async def hug(ctx):
     await ctx.send('You give your cactus a hug, :)')
 
 @client.event
