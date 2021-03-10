@@ -177,14 +177,15 @@ def fullPrice(item, user, num, shopType):
 	elif shopType == 'idleShop':
 		bought = 'idleBought'
 	index = 0
-	for i in generalDB.find_one({"name": shopType})[shopType]:
+	shop = generalDB.find_one({"name": shopType})[shopType]
+	for i in shop:
 		if i == item:
 			break
 		else:
 			index += 1
 	total = 0
 	for n in range(0,num):
-		total += round(generalDB.find_one({"name": shopType})[shopType][item]['price'] * 1.138 ** (userDB.find_one({"user_id": user})[bought][index] + n))
+		total += round(shop[item]['price'] * 1.138 ** (userDB.find_one({"user_id": user})[bought][index] + n))
 	return total
 
 def findMax(item, userID, shopType):
@@ -637,9 +638,10 @@ async def daily_reward(ctx):
 	if not userExists(user):
 		addUser(user)
 	now = time.time()
-	status = dailyCalc(now, userDB.find_one({"user_id": user})['dailyTime'])
+	doc = userDB.find_one({"user_id": user})
+	status = dailyCalc(now, doc['dailyTime'])
 	if status == 'Ready!':
-		stats = userDB.find_one({"user_id": user})
+		stats = doc
 		multiplier = stats['multiplier']
 		reward = stats['hpg'] * multiplier * 50
 		await send_embed(
@@ -712,32 +714,34 @@ async def on_reaction_add(reaction, user):
 				if shopType != '':
 					break
 			if shopType != '':
-				page = generalDB.find_one({"name": shopType+"Messages"})[shopType+"Messages"][messageID]['page']
+				shop = generalDB.find_one({"name": shopType+"Messages"})[shopType+"Messages"]
+				page = shop[messageID]['page']
 				if str(reaction) == '⬅️':
 					page-=1
 				else:
 					page += 1
 				if page < 1: page = 1
-				if page > math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5): page = math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5)
+				if page > math.ceil(len(shop) / 5): page = math.ceil(len(shop) / 5)
 				user1 = user.id
-				if user1 == generalDB.find_one({"name": shopType+"Messages"})[shopType + 'Messages'][messageID]['user']:
+				if user1 == shop[messageID]['user']:
 					desc = getShopPage(user1, page, shopType)
 					embed = discord.Embed(
 						title='Shop (' + str(client.get_user(user1)) + ')',
-						description='Height: ' + bold(commas(str(userDB.find_one({"user_id": user1})['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5)) + desc,
+						description='Height: ' + bold(commas(str(userDB.find_one({"user_id": user1})['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(shop) / 5)) + desc,
 						color=0x00ff00
 					)
 					await reaction.message.delete()
 					sent = await reaction.message.channel.send(embed=embed)
 					await sent.add_reaction('⬅️')
 					await sent.add_reaction('➡️')
-					new = generalDB.find_one({"name": shopType+"Messages"})[shopType + 'Messages']
+					new = shop
 					del new[messageID]
 					new[str(sent.id)] = {'page':page,'user':user1}
 					generalDB.update_one({"name": shopType+"Messages"}, {"$set": {shopType + 'Messages': new}})
 			else:
-				if messageID in generalDB.find_one({"name": "leadMessages"})['leadMessages']:
-					info = generalDB.find_one({"name": "leadMessages"})['leadMessages'][messageID]
+				leaders = generalDB.find_one({"name": "leadMessages"})['leadMessages']
+				if messageID in leaders:
+					info = leaders[messageID]
 					page = info['page']
 					if str(reaction) == '⬅️':
 						page -= 1
@@ -764,7 +768,7 @@ async def on_reaction_add(reaction, user):
 						)
 						await sent.add_reaction('⬅️')
 						await sent.add_reaction('➡️')
-						new = generalDB.find_one({"name": "leadMessages"})['leadMessages']
+						new = leaders
 						del new[messageID]
 						new[str(sent.id)] = {'page':page,'user':user1}
 						generalDB.update_one({"name": "leadMessages"}, {"$set": {'leadMessages': new}})
