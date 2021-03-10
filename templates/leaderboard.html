@@ -9,16 +9,18 @@
 <h3>Leaderboard</h3>
 <div id="leaderboard">
 	<ol>
-		{% for i in range(len(players)) %}
-		{% if i == 0 %}
-		<li id="one"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
-		{% elif i == 1 %}
-			<li id="two"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
-		{% elif i == 2 %}
-			<li id="three"><strong><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</strong></li>
-		{% else %}
-		<li><a href="/user/{{players[i][1]}}">{{players[i][0]}}</a>: {{scores[i]}} cm</li>
-		{% endif %}
+		{% set count = namespace(value=1) %}
+		{% for i in ranks %}
+			{% if count.value == 1 %}
+			<li id="one"><strong><a href="/user/{{i['user_id']}}">{{i["user_tag"]}}</a>: {{i["score"]}} cm</strong></li>
+			{% elif count.value == 2 %}
+				<li id="two"><strong><a href="/user/{{i['user_id']}}">{{i["user_tag"]}}</a>: {{i["score"]}} cm</strong></li>
+			{% elif count.value == 3 %}
+				<li id="three"><strong><a href="/user/{{i['user_id']}}">{{i["user_tag"]}}</a>: {{i["score"]}} cm</strong></li>
+			{% else %}
+			<li><a href="/user/{{i['user_id']}}">{{i["user_tag"]}}</a>: {{i["score"]}} cm</li>
+			{% endif %}
+			{% set count.value = count.value + 1 %}
 		{% endfor %}
 	</ol>
 </div>

@@ -1,13 +1,12 @@
-import flask, os
-from easypydb import DB
+import flask, os, pymongo
 from threading import Thread
 
 
 app = flask.Flask('')
 
-dbTOKEN = os.getenv('dbTOKEN')
-userDB = DB('userDB', dbTOKEN)
-pfpDB = DB('pfpDB', dbTOKEN)
+myclient = pymongo.MongoClient(os.getenv("mongourl"))
+mydb = myclient["cactusbot"]
+userDB = mydb["users"]
 
 def commas(i):
 	s,i="",str(i)
@@ -15,25 +14,29 @@ def commas(i):
 	if i=="":s=s[1:]
 	return(i+s)
 
+def get_pfp(user):
+	try:
+		user2 = client.get_user(user)
+		if user2.is_avatar_animated():
+			format = "gif"
+		else:
+			format = "png"
+		pfp = str(user2.avatar_url_as(format=format))
+	except AttributeError:
+		pfp = None
+	return pfp
+
 def ranking():
-	scores = []
-	users = []
-	for i in userDB.data:
-		if i != '691576874261807134':
-			scores.append(userDB[i]['score'])
-	scores.sort(reverse=True)
-	for s in scores:
-		for u in userDB.data:
-			if userDB[u]['score'] == s and u not in users:
-				users.append(u)
-				break
+	users = list(userDB.find(
+		{
+			"user_id": {"$ne": 691576874261807134}
+		}
+	).sort("score", -1))
 
-	for x in range(len(users)):
-		users[x] = [pfpDB['stuff'][users[x]]['name'], users[x]]
+	for item in users:
+		item["user_tag"] = str(client.get_user(item["user_id"]))
 
-
-	return [scores, users]
-
+	return users
 
 @app.route('/')
 def main():
@@ -41,28 +44,24 @@ def main():
 	
 @app.route('/leaderboard')
 def leaders():
-	userDB.load()
-	pfpDB.load()
 	ranks = ranking()
-	orderedScores = ranks[0]
-	orderedPlayers = ranks[1]
 	
-	for a in range(len(orderedScores)):
-		orderedScores[a] = commas(orderedScores[a])
+	for a in range(len(ranks)):
+		ranks[a]["score"] = commas(ranks[a]["score"])
 
-	return flask.render_template('leaderboard.html', players=orderedPlayers[:50], scores=orderedScores[:50], len=lambda a:len(a))
+	return flask.render_template('leaderboard.html', ranks=ranks, len=lambda a:len(a))
 
 @app.route('/user/<ID>')
 def profile(ID):
-	userDB.load()
-	pfpDB.load()
-	if ID in userDB.data:
-		pfp = pfpDB['stuff'][ID]['pfp']
-		stats = userDB[ID]
-		stats['name'] = pfpDB['stuff'][ID]['name']
-		ranks = ranking()[1]
+	ID = int(ID)
+	doc = userDB.find_one({"user_id": ID})
+	if doc != None:
+		pfp = get_pfp(ID)
+		stats = doc
+		stats['name'] = str(client.get_user(ID))
+		ranks = ranking()
 		for i in range(len(ranks)):
-			if str(ranks[i][1]) == ID:
+			if ranks[i]["user_id"] == ID:
 				stats['rank'] = str(i + 1)
 				break		
 
@@ -76,14 +75,12 @@ def show_search():
 		
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-	userDB.load()
-	pfpDB.load()
 	search = flask.request.form['name']
 	found = False
 	results = []
-	for i in userDB.data:
-		if search in i or search.lower() in pfpDB['stuff'][i]['name'].lower():
-			results.append({'id':i,'tag':pfpDB['stuff'][i]['name']})
+	for i in userDB.find():
+		if search in str(i["user_id"]) or search.lower() in str(client.get_user(i)).lower():
+			results.append({'id':i,'tag':str(client.get_user(i))})
 			found = True
 	
 	return flask.render_template('search.html', found=found, results=results)
@@ -91,22 +88,22 @@ def search():
 
 @app.route("/stats")
 def stats():
-	userDB.load()
-	pfpDB.load()
 	ranks = ranking()
-	orderedScores = ranks[0]
-	orderedPlayers = ranks[1]
-	orderedNames = [name[0] for name in orderedPlayers]
+	orderedScores = [i["score"] for i in ranks]
+	orderedPlayers = [i["user_id"] for i in ranks]
+	orderedNames = [i["user_tag"] for i in ranks]
 	return flask.render_template("stats.html", orderedScores=orderedScores, orderedPlayers=orderedPlayers, orderedNames=orderedNames)
 
 
 @app.route("/favicon.ico")
 def favicon():
-  return flask.send_file("favicon.ico")
+	return flask.send_file("favicon.ico")
 
 def run():
 	app.run('0.0.0.0')
 
-def s():
+def s(_client):
+	global client
+	client = _client
 	server = Thread(target=run)
 	server.start()

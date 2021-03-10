@@ -1,11 +1,11 @@
-import discord, os, time, math, threading, sys, asyncio, server
+import discord, os, time, math, threading, sys, asyncio, server, pymongo
 from discord.ext import commands
-from easypydb import DB
 
-dbTOKEN = os.getenv('dbTOKEN')
-userDB = DB('userDB', dbTOKEN)
-generalDB = DB('generalDB', dbTOKEN)
-pfpDB = DB('pfpDB', dbTOKEN)
+
+myclient = pymongo.MongoClient(os.getenv("mongourl"))
+mydb = myclient["cactusbot"]
+userDB = mydb["users"]
+generalDB = mydb["general"]
 
 
 intents = discord.Intents.default()
@@ -27,17 +27,14 @@ async def on_ready():
 	activity = discord.Activity(name='for =help', type=discord.ActivityType.watching)
 	await client.change_presence(activity=activity)
 	print('In ' + str(len(client.guilds)) + ' servers')
-	for i in client.guilds:
-		print(i)
 	global uptime
 	uptime = time.time()
 	set_interval(perMin, 60)
-	set_intervalPFPs(updatePFPs, 300)
 
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-
+'''
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -49,7 +46,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-
+'''
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------
@@ -110,22 +107,14 @@ async def send_embed(ctx, t, d, good):
 	)
 	await ctx.send(embed=embed)
 
-def userExists(user):
-	found = False
-	for i in userDB.data:
-		if user == i:
-			found = True
-			break
-	return found
+def userExists(userID):	
+	return userDB.find_one({"user_id": userID}) != None
 
-def addUser(user):
-	def newBought(shopType):
-		thing = []
-		for i in generalDB[shopType]:
-			thing.append(0)
-		return thing
+def addUser(userID):
+	newBought = lambda shopType: [0 for i in generalDB.find_one({"name": shopType})[shopType]]
 
-	userDB[user] = {
+	userDB.insert_one({
+		"user_id": userID,
 		'score':0,
 		'hpg':2,
 		'hpm':0,
@@ -134,20 +123,7 @@ def addUser(user):
 		'idleBought': newBought('idleShop'),
 		'dailyTime':0,
 		'growTime':0,
-	}
-
-	new = pfpDB['stuff']
-	try:
-		user2 = client.get_user(int(user))
-		if user2.is_avatar_animated() != True:
-			format = "png"
-		else:
-			format = "gif"
-		pfp = str(user2.avatar_url_as(format=format))
-	except AttributeError:
-		pfp = None
-	new[user] = {'name':str(client.get_user(int(user))), 'pfp':pfp}
-	pfpDB['stuff'] = new
+	})
 
 def dailyCalc(now, last):
 	difference = now - last
@@ -166,7 +142,7 @@ def getShopPage(user, page, shopType):
 		increase = 'hpg'
 	elif shopType == 'idleShop':
 		increase = 'hpm'
-	shop = generalDB[shopType]
+	shop = generalDB.find_one({"name": shopType})[shopType]
 	msg = '\n```\n'
 	items = []
 	incs = []
@@ -201,27 +177,28 @@ def fullPrice(item, user, num, shopType):
 	elif shopType == 'idleShop':
 		bought = 'idleBought'
 	index = 0
-	for i in generalDB[shopType]:
+	for i in generalDB.find_one({"name": shopType})[shopType]:
 		if i == item:
 			break
 		else:
 			index += 1
 	total = 0
 	for n in range(0,num):
-		total += round(generalDB[shopType][item]['price'] * 1.138 ** (userDB[user][bought][index] + n))
+		total += round(generalDB.find_one({"name": shopType})[shopType][item]['price'] * 1.138 ** (userDB.find_one({"user_id": user})[bought][index] + n))
 	return total
 
-def findMax(item, user, shopType):
+def findMax(item, userID, shopType):
+	doc = userDB.find_one({"user_id": userID})
 	loops = 0
-	score = userDB[user]['score']
-	price = generalDB[shopType][item]['price']
+	score = doc['score']
+	price = generalDB.find_one({"name": shopType})[shopType][item]['price']
 	if shopType == 'shop':
 		bought = 'bought'
 	elif shopType == 'idleShop':
 		bought = 'idleBought'
-	boughtLst = userDB[user][bought]
+	boughtLst = doc[bought]
 	index = 0
-	for i in generalDB[shopType]:
+	for i in generalDB.find_one({"name": shopType})[shopType]:
 		if i == item:
 			break
 		else:
@@ -235,8 +212,8 @@ def findMax(item, user, shopType):
 
 
 def showHabitats(user):
-	multiplier = userDB[user]['multiplier']
-	habitats = generalDB['habitats']
+	multiplier = userDB.find_one({"user_id": user})['multiplier']
+	habitats = generalDB.find_one({"name": "habitats"})["habitats"]
 	desc = '\n```\n'
 	for i in habitats:
 		desc += '\n' + i.title() + '\nPrice: '
@@ -251,69 +228,42 @@ def showHabitats(user):
 	return desc + '```'
 
 def showLeaderboard(page):
-	scores = []
-	users = []
-	for i in userDB.data:
-		if i != '691576874261807134':
-			scores.append(userDB[i]['score'])
-	scores.sort(reverse=True)
-	for s in scores:
-		for u in userDB.data:
-			if userDB[u]['score'] == s and u not in users:
-				users.append(u)
-				break
-	numPages = math.ceil(len(scores) / 10)
+	users = list(userDB.find(
+		{
+			"user_id": {"$ne": 691576874261807134}
+		}
+	).sort("score", -1))
+
+	numPages = math.ceil(len(users) / 10)
+
 	if page < 1:
 		page = 1
 	if page > numPages:
 		page = numPages
 	if page < numPages:
-		scores = scores[(page-1) * 10: page * 10]
-		users = users[(page-1) * 10: page * 10]
+		scores = [i["score"] for i in users[(page-1) * 10: page * 10]]
+		users = [i["user_id"] for i in users[(page-1) * 10: page * 10]]
 	else:
-		scores = scores[(page-1) * 10:]
-		users = users[(page-1) * 10:]
+		scores = [i["score"] for i in users[(page-1) * 10:]]
+		users = [i["user_id"] for i in users[(page-1) * 10:]]
 	desc ='\n```\n'
 	for x in range(len(scores)):
-		desc += str((page-1)*10+x+1) + '. ' + str(client.get_user(int(users[x]))) +': ' + commas(str(scores[x])) + 'm\n'
+		desc += str((page-1)*10+x+1) + '. ' + str(client.get_user(users[x])) +': ' + commas(str(scores[x])) + 'm\n'
 	return desc + '```'
 
 
 def perMin():
-	for i in userDB.data:
-		stats = userDB[i]
-		increase = userDB[i]['hpm']
+	for i in userDB.find():
+		stats = i
+		increase = i['hpm']
 		stats['score'] += increase * stats['multiplier']
-		userDB[i] = stats
+		userDB.update_one({"user_id": i["user_id"]}, {"$set": stats})
 
 def set_interval(func, sec):
 	def func_wrapper():
 		set_interval(func, sec)
 		perMin()
 	t = threading.Timer(sec, func_wrapper)
-	t.start()
-	return t
-
-def updatePFPs():
-	for i in userDB.data:
-		new = pfpDB['stuff']
-		try:
-			user = client.get_user(int(i))
-			if user.is_avatar_animated() != True:
-				format = "png"
-			else:
-				format = "gif"
-			pfp = str(user.avatar_url_as(format = format))
-		except AttributeError:
-			pfp = None
-		new[i] = {'name':str(client.get_user(int(i))), 'pfp':pfp}
-		pfpDB['stuff'] = new
-
-def set_intervalPFPs(func, sec):
-	def func_wrapperPFPs():
-		set_interval(func, sec)
-		updatePFPs()
-	t = threading.Timer(sec, func_wrapperPFPs)
 	t.start()
 	return t
 
@@ -339,7 +289,7 @@ async def ping(ctx):
 	await msg.edit(embed=embed2)
 
 
-@client.command(aliases=['info','uptime','source','source-code','prefix','github'])
+@client.command(aliases=['info','uptime','source','source-code','prefix'])
 async def invite(ctx):
 	now = time.time()
 	diff = now - uptime
@@ -356,7 +306,7 @@ async def servers(ctx):
 	users = 0
 	for i in client.guilds:
 		total += len(i.members)
-	for i in userDB.data:
+	for i in userDB.find():
 		users += 1
 	embed = discord.Embed(color=0x00ff00,description='This bot is in ' + bold(str(len(client.guilds))) + ' servers.\nTotal members: ' + bold(str(total)) + '\nTotal Users: ' + bold(str(users)))
 	await ctx.send(embed=embed)
@@ -374,8 +324,7 @@ async def lines(ctx):
 
 @client.command(aliases=['leaders', 'ranks', 'ranking', 'lb', 'lbd'])
 async def leaderboard(ctx, mssg=None):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if mssg == None:
 		page = 1
 	else:
@@ -384,7 +333,7 @@ async def leaderboard(ctx, mssg=None):
 		except ValueError:
 			page = 1
 	total = 0
-	for i in userDB.data:
+	for i in userDB.find():
 		total += 1
 	numPages = math.ceil((total-1)/10)
 	if page > numPages:
@@ -399,22 +348,21 @@ async def leaderboard(ctx, mssg=None):
 	)
 	await sent.add_reaction('⬅️')
 	await sent.add_reaction('➡️')
-	msgs = generalDB['leadMessages']
+	msgs = generalDB.find_one({"name": "leadMessages"})['leadMessages']
 	msgs[str(sent.id)] = {'user':user,'page':page}
-	generalDB['leadMessages'] = msgs
+	generalDB.update_one({"name": 'leadMessages'}, {"$set": {"leadMessages": msgs}})
 
 
 @client.command(aliases=['profile','stats', 'height','size', 'cmpg', 'hpg'])
 async def prof(ctx, *, user: discord.User=None):
-	userDB.load()
 	if user == None:
 		name = str(ctx.author)
-		user = str(ctx.author.id)
+		user = ctx.author.id
 	else:
 		name = str(user)
-		user = str(user.id)
+		user = user.id
 	if userExists(user):
-		stats = userDB[user]
+		stats = userDB.find_one({"user_id": user})
 		desc = 'Height: ' + bold(commas(str(stats['score']), False) + 'm') + '\nHeight per Growth: ' + bold(commas(str(stats['hpg']), False) + 'm') + '\nGrowth per Minute: ' + bold(commas(str(stats['hpm']), False)+ 'm') + '\nMultiplier: ' + bold(str(stats['multiplier']) + 'x') + '\nDaily Reward: ' + dailyCalc(time.time(), stats['dailyTime'])
 		await send_embed(
 			ctx,
@@ -436,14 +384,13 @@ async def prof(ctx, *, user: discord.User=None):
 
 @client.command()
 async def grow(ctx):
-	userDB.load()
-	user = str(ctx.author.id)
-	if not userExists(user):
-		addUser(user)
+	userID = ctx.author.id
+	if not userExists(userID):
+		addUser(userID)
 
-	userStats = userDB[user]
+	userStats = userDB.find_one({"user_id": userID})
 	timeNow = time.time()
-	if timeNow - userStats['growTime'] >= generalDB['cooldown']:
+	if timeNow - userStats['growTime'] >= generalDB.find_one({"name": "cooldown"})['cooldown']:
 		await send_embed(
 			ctx,
 			'GROW!',
@@ -452,12 +399,12 @@ async def grow(ctx):
 		)
 		userStats['score'] += userStats['hpg'] * userStats['multiplier']
 		userStats['growTime'] = timeNow
-		userDB[user] = userStats
+		userDB.update_one({"user_id": userID}, {"$set": userStats})
 	else:
 		await send_embed(
 			ctx,
 			'Too tired :(',
-			'You are too tired from the last time you grew.\nYou will be ready again in ' + bold(str(math.ceil(generalDB['cooldown'] - (timeNow - userStats['growTime']))) + ' second(s).'),
+			'You are too tired from the last time you grew.\nYou will be ready again in ' + bold(str(math.ceil(generalDB.find_one({"name": "cooldown"})['cooldown'] - (timeNow - userStats['growTime']))) + ' second(s).'),
 			False
 		)
 
@@ -467,8 +414,7 @@ async def grow(ctx):
 
 @client.command(aliases=['store'])
 async def shop(ctx, mssg=None):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	if mssg == None:
@@ -480,16 +426,16 @@ async def shop(ctx, mssg=None):
 			page = 1
 	desc = getShopPage(user, page, 'shop')
 	embed = discord.Embed(
-		title='Shop (' + str(client.get_user(int(user))) + ')',
-		description='Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + '\nPage: ' + str(page)  + '/' + str(math.ceil(len(generalDB['shop']) / 5)) + desc,
+		title='Shop (' + str(client.get_user(user)) + ')',
+		description='Height: ' + bold(commas(str(userDB.find_one({"user_id": user})['score'])) + 'm') + '\nPage: ' + str(page)  + '/' + str(math.ceil(len(generalDB.find_one({"name": "shop"})['shop']) / 5)) + desc,
 		color=0x00ff00
 	)
 	sent = await ctx.send(embed=embed)
 	await sent.add_reaction('⬅️')
 	await sent.add_reaction('➡️')
-	msgs = generalDB['shopMessages']
+	msgs = generalDB.find_one({"name": "shopMessages"})['shopMessages']
 	msgs[str(sent.id)] = {'user':user,'page':page}
-	generalDB['shopMessages'] = msgs
+	generalDB.update_one({"name": "shopMessages"}, {"$set": {'shopMessages': msgs}})
 
 
 
@@ -497,8 +443,7 @@ async def shop(ctx, mssg=None):
 
 @client.command(aliases=['ishop', 'idle-shop', 'i-shop'])
 async def idle_shop(ctx, mssg=None):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	if mssg == None:
@@ -510,16 +455,16 @@ async def idle_shop(ctx, mssg=None):
 			page = 1
 	desc = getShopPage(user, page, 'idleShop')
 	embed = discord.Embed(
-		title='Shop (' + str(client.get_user(int(user))) + ')',
-		description='Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB['idleShop']) / 5)) + desc,
+		title='Shop (' + str(client.get_user(user)) + ')',
+		description='Height: ' + bold(commas(str(userDB.find_one({"user_id": user})['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB.find_one({"name": "idleShop"})['idleShop']) / 5)) + desc,
 		color=0x00ff00
 	)
 	sent = await ctx.send(embed=embed)
 	await sent.add_reaction('⬅️')
 	await sent.add_reaction('➡️')
-	msgs = generalDB['idleShopMessages']
+	msgs = generalDB.find_one({"name": "idleShopMessages"})['idleShopMessages']
 	msgs[str(sent.id)] = {'user':user,'page':page}
-	generalDB['idleShopMessages'] = msgs
+	generalDB.update_one({"name": "idleShopMessages"}, {"$set": {'idleShopMessages': msgs}})
 
 
 
@@ -527,8 +472,7 @@ async def idle_shop(ctx, mssg=None):
 
 @client.command(aliases=['ibuy', 'i-buy', 'idle-buy', 'purchase'])
 async def buy(ctx, *, mssg=None):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	if mssg == None:
@@ -551,7 +495,7 @@ async def buy(ctx, *, mssg=None):
 			else:
 				num = 1
 				maxBuy = False
-		items = generalDB['shop']
+		items = generalDB.find_one({"name": "shop"})['shop']
 		real = False
 		if item in items:
 			shopType = 'shop'
@@ -559,7 +503,7 @@ async def buy(ctx, *, mssg=None):
 			increase = 'hpg'
 			bought = 'bought'
 		else:
-			items = generalDB['idleShop']
+			items = generalDB.find_one({"name": "idleShop"})['idleShop']
 			if item in items:
 				shopType = 'idleShop'
 				real = True
@@ -569,7 +513,7 @@ async def buy(ctx, *, mssg=None):
 			if maxBuy:
 				num = findMax(item, user, shopType)				
 			if num > 0:
-				stats = userDB[user]
+				stats = userDB.find_one({"user_id": user})
 				score = stats['score']
 				realPrice = fullPrice(item, user, num, shopType)
 				if realPrice <= score:
@@ -589,7 +533,7 @@ async def buy(ctx, *, mssg=None):
 						else:
 							index += 1
 					stats[bought][index] += num
-					userDB[user] = stats
+					userDB.update_one({"user_id": user}, {"$set": stats})
 				else:
 					await ctx.send(
 						embed=discord.Embed(
@@ -615,28 +559,27 @@ async def buy(ctx, *, mssg=None):
 
 @client.command(aliases=['habitat'])
 async def habitats(ctx):
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	desc = showHabitats(user)
 	await send_embed(
 		ctx,
 		'Habitats (' + str(ctx.author) + ')',
-		'Height: ' + bold(commas(str(userDB[user]['score'])) + 'm') + desc,
+		'Height: ' + bold(commas(str(userDB.find_one({"user_id": user})['score'])) + 'm') + desc,
 		True
 	)
 
 @client.command(aliases=['change-habitat'])
 async def change_habitat(ctx, *, mssg=None):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	if mssg != None:
 		habitat = mssg.lower()
-		habitats = generalDB['habitats']
+		habitats = generalDB.find_one({"name": "habitats"})['habitats']
 		if habitat in habitats:
-			stats = userDB[user]
+			stats = userDB.find_one({"user_id": user})
 			userMult = stats['multiplier']
 			habMult = habitats[habitat]['multiplier']
 			if habMult > userMult:
@@ -650,7 +593,7 @@ async def change_habitat(ctx, *, mssg=None):
 						True
 					)
 					stats['multiplier'] = habitats[habitat]['multiplier']
-					userDB[user] = stats
+					userDB.update_one({"user_id": user}, {"$set": stats})
 				else:
 					await send_embed(
 						ctx,
@@ -690,14 +633,13 @@ async def change_habitat(ctx, *, mssg=None):
 
 @client.command(aliases=['daily-reward','dailyreward', 'daily'])
 async def daily_reward(ctx):
-	userDB.load()
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if not userExists(user):
 		addUser(user)
 	now = time.time()
-	status = dailyCalc(now, userDB[user]['dailyTime'])
+	status = dailyCalc(now, userDB.find_one({"user_id": user})['dailyTime'])
 	if status == 'Ready!':
-		stats = userDB[user]
+		stats = userDB.find_one({"user_id": user})
 		multiplier = stats['multiplier']
 		reward = stats['hpg'] * multiplier * 50
 		await send_embed(
@@ -708,7 +650,7 @@ async def daily_reward(ctx):
 			)
 		stats['score'] += reward
 		stats['dailyTime'] = now
-		userDB[user] = stats
+		userDB.update_one({"user_id": user}, {"$set": stats})
 	else:
 		await send_embed(
 			ctx,
@@ -720,7 +662,7 @@ async def daily_reward(ctx):
 
 @client.command(aliases=['bug','bugs','suggestion','suggestions','report','bug_report','bug-report'])
 async def feedback(ctx, *, mssg=None):
-	user = str(ctx.author.id)
+	user = ctx.author.id
 	if mssg == None:
 		await send_embed(
 			ctx,
@@ -737,7 +679,7 @@ async def feedback(ctx, *, mssg=None):
 		)
 		channel = client.get_channel(727865599467978849)
 		location = '\nhttps://discordapp.com/channels/'+str(ctx.guild.id)+'/'+str(ctx.channel.id)+'/'+str(ctx.message.id)
-		footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + user
+		footer = 'Channel id: ' + str(ctx.channel.id) + '\nUser id: ' + str(user)
 		await channel.send(
 			embed=discord.Embed(
 				description=str(ctx.author) + ' said:\n```\n' + mssg + '```\nhere: ' + location
@@ -756,14 +698,13 @@ async def settings(ctx):
 
 @client.event
 async def on_reaction_add(reaction, user):
-	userDB.load()
 	if user.id != 700051830394060801:
 		if str(reaction) in ['⬅️','➡️']:
 			shopType = ''
 			shopTypes = ['shop','idleShop']
 			messageID = str(reaction.message.id)
 			for i in shopTypes:
-				messages = generalDB[i + 'Messages']
+				messages = generalDB.find_one({"name": i+"Messages"})[i+"Messages"]
 				for x in messages:
 					if x == messageID:
 						shopType = i
@@ -771,46 +712,46 @@ async def on_reaction_add(reaction, user):
 				if shopType != '':
 					break
 			if shopType != '':
-				page = generalDB[shopType + 'Messages'][messageID]['page']
+				page = generalDB.find_one({"name": shopType+"Messages"})[shopType+"Messages"][messageID]['page']
 				if str(reaction) == '⬅️':
 					page-=1
 				else:
 					page += 1
 				if page < 1: page = 1
-				if page > math.ceil(len(generalDB[shopType]) / 5): page = math.ceil(len(generalDB[shopType]) / 5)
-				user1 = str(user.id)
-				if user1 == generalDB[shopType + 'Messages'][messageID]['user']:
+				if page > math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5): page = math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5)
+				user1 = user.id
+				if user1 == generalDB.find_one({"name": shopType+"Messages"})[shopType + 'Messages'][messageID]['user']:
 					desc = getShopPage(user1, page, shopType)
 					embed = discord.Embed(
-						title='Shop (' + str(client.get_user(int(user1))) + ')',
-						description='Height: ' + bold(commas(str(userDB[user1]['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB[shopType]) / 5)) + desc,
+						title='Shop (' + str(client.get_user(user1)) + ')',
+						description='Height: ' + bold(commas(str(userDB.find_one({"user_id": user1})['score'])) + 'm') + '\nPage: ' + str(page) + '/' + str(math.ceil(len(generalDB.find_one({"name": shopType})[shopType]) / 5)) + desc,
 						color=0x00ff00
 					)
 					await reaction.message.delete()
 					sent = await reaction.message.channel.send(embed=embed)
 					await sent.add_reaction('⬅️')
 					await sent.add_reaction('➡️')
-					new = generalDB[shopType + 'Messages']
+					new = generalDB.find_one({"name": shopType+"Messages"})[shopType + 'Messages']
 					del new[messageID]
 					new[str(sent.id)] = {'page':page,'user':user1}
-					generalDB[shopType + 'Messages'] = new
+					generalDB.update_one({"name": shopType+"Messages"}, {"$set": {shopType + 'Messages': new}})
 			else:
-				if messageID in generalDB['leadMessages']:
-					info = generalDB['leadMessages'][messageID]
+				if messageID in generalDB.find_one({"name": "leadMessages"})['leadMessages']:
+					info = generalDB.find_one({"name": "leadMessages"})['leadMessages'][messageID]
 					page = info['page']
 					if str(reaction) == '⬅️':
 						page -= 1
 					else:
 						page += 1
 					total = 0
-					for i in userDB.data:
+					for i in userDB.find():
 						total += 1
 					numPages = math.ceil((total-1)/10)
 					if page < 1:
 						page = 1
 					elif page > numPages:
 						page = numPages
-					user1 = str(user.id)
+					user1 = user.id
 					if user1 == info['user']:
 						desc = showLeaderboard(page)
 						await reaction.message.delete()
@@ -823,10 +764,10 @@ async def on_reaction_add(reaction, user):
 						)
 						await sent.add_reaction('⬅️')
 						await sent.add_reaction('➡️')
-						new = generalDB['leadMessages']
+						new = generalDB.find_one({"name": "leadMessages"})['leadMessages']
 						del new[messageID]
 						new[str(sent.id)] = {'page':page,'user':user1}
-						generalDB['leadMessages'] = new
+						generalDB.update_one({"name": "leadMessages"}, {"$set": {'leadMessages': new}})
 
 
 @client.command(aliases=['role'])
@@ -855,7 +796,7 @@ async def roles(ctx, *, role: discord.Role=None):
 async def on_message(message):
 	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
-	if str(message.author.id) not in generalDB['banned']:
+	if str(message.author.id) not in generalDB.find_one({"name": "banned"})['banned']:
 		await client.process_commands(message)
 
 
@@ -873,7 +814,7 @@ async def cooldown(ctx, mssg):
 		'Cooldown set to ' + mssg,
 		True
 	)
-	generalDB['cooldown'] = int(mssg)
+	generalDB.update_one({"name": "cooldown"}, {"$set": {'cooldown': int(mssg)}})
 
 @client.command(aliases=['addidleitem'])
 @commands.is_owner()
@@ -895,19 +836,19 @@ async def additem(ctx, *, mssg=None):
 			shopType = 'shop'
 			bought = 'bought'
 		new = {'price':int(mssg.split('=')[1].split(',')[0]),increase:int(mssg.split('=')[1].split(',')[1])}
-		shop = generalDB[shopType]
+		shop = generalDB.find_one({"name": shopType})[shopType]
 		shop[mssg.split('=')[0].lower()] = new
-		generalDB[shopType] = shop
+		generalDB.update_one({"name": shopType}, {"$set": {shopType: shop}})
 		await send_embed(
 			ctx,
 			None,
 			str({mssg.split('=')[0]:new}),
 			True
 		)
-		for i in userDB.data:
-			stats = userDB[i]
+		for i in userDB.find():
+			stats = i
 			stats[bought].append(0)
-			userDB[i] = stats
+			userDB.update_one({"user_id": i["user_id"]}, {"$set": stats})
 
 @client.command()
 @commands.is_owner()
@@ -920,8 +861,7 @@ async def addhabitat(ctx, *, mssg=None):
 			False
 		)
 	else:
-		generalDB["habitats"][mssg.split("=")[0].lower()] = {"price":int(mssg.split("=")[1].split(",")[0]),"multiplier":int(mssg.split("=")[1].split(",")[1])}
-		generalDB.save()		
+		generalDB.find_one({"name": "habitats"})["habitats"][mssg.split("=")[0].lower()] = {"price":int(mssg.split("=")[1].split(",")[0]),"multiplier":int(mssg.split("=")[1].split(",")[1])}
 		await send_embed(
 			ctx,
 			None,
@@ -933,8 +873,8 @@ async def addhabitat(ctx, *, mssg=None):
 @client.command(aliases=['admin-set'])
 @commands.is_owner()
 async def admin_set(ctx):
-	user = '691576874261807134'
-	stats = userDB[user]
+	user = 691576874261807134
+	stats = userDB.find_one({"user_id": user})
 	stats['score'] = 1000000000
 	stats['hpg'] = 1000000000
 	stats['hpm'] = 1000000000
@@ -943,7 +883,7 @@ async def admin_set(ctx):
 	for x in range(len(stats['idleBought'])):
 		stats['idleBought'][x] = 0
 	stats['multiplier'] = 7
-	userDB[user] = stats
+	userDB.update_one({"user_id": user}, {"$set": stats})
 	await send_embed(
 		ctx,
 		'SET!',
@@ -954,8 +894,8 @@ async def admin_set(ctx):
 @client.command(aliases=['admin-reset'])
 @commands.is_owner()
 async def admin_reset(ctx):
-	user = '691576874261807134'
-	stats = userDB[user]
+	user = 691576874261807134
+	stats = userDB.find_one({"user_id": user})
 	stats['score'] = 0
 	stats['hpg'] = 2
 	stats['hpm'] = 0
@@ -964,7 +904,7 @@ async def admin_reset(ctx):
 	for x in range(len(stats['idleBought'])):
 		stats['idleBought'][x] = 0
 	stats['multiplier'] = 1
-	userDB[user] = stats
+	userDB.update_one({"user_id": user}, {"$set": stats})
 	await send_embed(
 		ctx,
 		'RESET!',
@@ -988,7 +928,7 @@ async def reply(ctx, *, mssg=None):
 @commands.is_owner()
 async def ban(ctx, mssg=None):
 	if mssg != None:
-		banned = generalDB['banned']
+		banned = generalDB.find_one({"name": "banned"})["banned"]
 		if mssg not in banned:
 			banned.append(mssg)
 			await send_embed(
@@ -997,7 +937,7 @@ async def ban(ctx, mssg=None):
 				str(client.get_user(int(mssg))) + ' has been banned.',
 				True
 			)
-			generalDB['banned']=banned
+			generalDB.update_one({"name": "banned"}, {"$set": {'banned': banned}})
 		else:
 			await send_embed(
 				ctx,
@@ -1010,13 +950,13 @@ async def ban(ctx, mssg=None):
 @commands.is_owner()
 async def unban(ctx, mssg=None):
 	if mssg != None:
-		banned = generalDB['banned']
+		banned = generalDB.find_one({"name": "banned"})["banned"]
 		if mssg in banned:
 			newLst = []
 			for i in banned:
 				if i != mssg:
 					newLst.append(i)
-			generalDB['banned'] = newLst
+			generalDB.update_one({"name": "banned"}, {"$set": {'banned': newLst}})
 			await send_embed(
 				ctx,
 				'UNBANNED',
@@ -1034,7 +974,7 @@ async def unban(ctx, mssg=None):
 @client.command(aliases=['see-bans','banned','seebans'])
 @commands.is_owner()
 async def see_bans(ctx):
-	banned = generalDB['banned']
+	banned = generalDB.find_one({"name": "banned"})["banned"]
 	desc = '```'
 	for i in banned:
 		desc += '\n' + str(client.get_user(int(i))) + ': ' + i
@@ -1054,5 +994,6 @@ async def restart(ctx):
   os.system("clear")
   os.execv(sys.executable, ['python'] + sys.argv)
 
-server.s()
+
+server.s(client)
 client.run(os.getenv('TOKEN'))
