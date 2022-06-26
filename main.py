@@ -34,7 +34,7 @@ async def on_ready():
 #-------------------------------------------------------
 #						Errors
 #-------------------------------------------------------
-'''
+
 @client.event
 async def on_command_error(ctx, error):
 	channel = client.get_channel(730420490296098846)
@@ -46,7 +46,7 @@ async def on_command_error(ctx, error):
 	await channel.send(embed=embed2)
 	await asyncio.sleep(5)
 	await msg.delete()
-'''
+
 #-------------------------------------------------------
 #						Help
 #-------------------------------------------------------

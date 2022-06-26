@@ -79,8 +79,8 @@ def search():
 	found = False
 	results = []
 	for i in userDB.find():
-		if search in str(i["user_id"]) or search.lower() in str(client.get_user(i)).lower():
-			results.append({'id':i,'tag':str(client.get_user(i))})
+		if search in str(i["user_id"]) or search.lower() in str(client.get_user(i["user_id"])).lower():
+			results.append({'id':i["user_id"], 'tag':str(client.get_user(i["user_id"]))})
 			found = True
 	
 	return flask.render_template('search.html', found=found, results=results)
