@@ -100,7 +100,7 @@ def favicon():
 	return flask.send_file("favicon.ico")
 
 def run():
-	app.run('0.0.0.0')
+	app.run('0.0.0.0', port=os.getenv("PORT"))
 
 def s(_client):
 	global client
