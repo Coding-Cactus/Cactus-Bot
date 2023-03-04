@@ -7,6 +7,7 @@ mydb = myclient["cactusbot"]
 userDB = mydb["users"]
 generalDB = mydb["general"]
 
+BANNED = generalDB.find_one({"name": "banned"})['banned']
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -800,7 +801,7 @@ async def roles(ctx, *, role: discord.Role=None):
 async def on_message(message):
 	if 'cactus' in message.clean_content.lower():
 		await message.add_reaction('🌵')
-	if str(message.author.id) not in generalDB.find_one({"name": "banned"})['banned']:
+	if str(message.author.id) not in BANNED:
 		await client.process_commands(message)
 
 
@@ -932,16 +933,15 @@ async def reply(ctx, *, mssg=None):
 @commands.is_owner()
 async def ban(ctx, mssg=None):
 	if mssg != None:
-		banned = generalDB.find_one({"name": "banned"})["banned"]
-		if mssg not in banned:
-			banned.append(mssg)
+		if mssg not in BANNED:
+			BANNED.append(mssg)
 			await send_embed(
 				ctx,
 				'BANNED',
 				str(client.get_user(int(mssg))) + ' has been banned.',
 				True
 			)
-			generalDB.update_one({"name": "banned"}, {"$set": {'banned': banned}})
+			generalDB.update_one({"name": "banned"}, {"$set": {'banned': BANNED}})
 		else:
 			await send_embed(
 				ctx,
@@ -954,10 +954,9 @@ async def ban(ctx, mssg=None):
 @commands.is_owner()
 async def unban(ctx, mssg=None):
 	if mssg != None:
-		banned = generalDB.find_one({"name": "banned"})["banned"]
-		if mssg in banned:
+		if mssg in BANNED:
 			newLst = []
-			for i in banned:
+			for i in BANNED:
 				if i != mssg:
 					newLst.append(i)
 			generalDB.update_one({"name": "banned"}, {"$set": {'banned': newLst}})
@@ -978,9 +977,8 @@ async def unban(ctx, mssg=None):
 @client.command(aliases=['see-bans','banned','seebans'])
 @commands.is_owner()
 async def see_bans(ctx):
-	banned = generalDB.find_one({"name": "banned"})["banned"]
 	desc = '```'
-	for i in banned:
+	for i in BANNED:
 		desc += '\n' + str(client.get_user(int(i))) + ': ' + i
 	await send_embed(
 		ctx,
@@ -999,5 +997,5 @@ async def restart(ctx):
   os.execv(sys.executable, ['python'] + sys.argv)
 
 
-server.s(client)
-client.run(os.getenv('TOKEN'))
+#server.s(client)
+#client.run(os.getenv('TOKEN'))
