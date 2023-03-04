@@ -997,5 +997,5 @@ async def restart(ctx):
   os.execv(sys.executable, ['python'] + sys.argv)
 
 
-#server.s(client)
-#client.run(os.getenv('TOKEN'))
+server.s(client)
+client.run(os.getenv('TOKEN'))
