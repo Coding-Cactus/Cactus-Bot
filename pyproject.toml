@@ -9,7 +9,7 @@ description = ""
 name = "discord-bot"
 version = "0.1.0"
 [tool.poetry.dependencies]
-flask = "^1.1"
+flask = "^2.3"
 python = "^3.8"
 "discord.py" = "^1.5.1"
 requests = "^2.25.1"
